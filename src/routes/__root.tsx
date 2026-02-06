@@ -3,6 +3,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { useEffect, useState } from 'react'
 
 import appCss from '../styles.css?url'
 
@@ -41,10 +42,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="bg-slate-950 text-slate-100">
         <QueryClientProvider client={queryClient}>
-          {children}
-          <footer className="border-t border-slate-800 bg-slate-950 px-4 py-3 text-xs text-slate-400">
+          <AuthControls />
+          <div className="pb-16">{children}</div>
+          <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-800 bg-slate-950/95 px-4 py-3 text-xs text-slate-400 backdrop-blur">
             <p>
               Deployed on Railway:{' '}
               <time dateTime={deployedAt} className="font-mono">
@@ -72,5 +74,79 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function AuthControls() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  useEffect(() => {
+    let isCancelled = false
+
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/get-session', {
+          credentials: 'include',
+        })
+
+        if (!response.ok) {
+          return
+        }
+
+        const payload = (await response.json().catch(() => null)) as
+          | { session?: unknown }
+          | null
+
+        if (!isCancelled && payload?.session) {
+          setIsLoggedIn(true)
+        }
+      } catch {
+        // Keep logout button hidden when session lookup fails.
+      }
+    }
+
+    checkSession()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [])
+
+  const handleLogout = async () => {
+    if (isLoggingOut) {
+      return
+    }
+
+    setIsLoggingOut(true)
+    try {
+      await fetch('/api/auth/sign-out', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json',
+        },
+        credentials: 'include',
+      })
+    } finally {
+      window.location.assign('/login')
+    }
+  }
+
+  if (!isLoggedIn) {
+    return null
+  }
+
+  return (
+    <div className="fixed right-4 top-4 z-50">
+      <button
+        type="button"
+        onClick={handleLogout}
+        disabled={isLoggingOut}
+        className="rounded-md border border-slate-700 bg-slate-900/95 px-3 py-2 text-sm text-slate-100 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {isLoggingOut ? 'Logging out...' : 'Logout'}
+      </button>
+    </div>
   )
 }
