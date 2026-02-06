@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { auth } from "@/lib/server/auth";
 
@@ -46,62 +46,7 @@ type ProjectsResponse = {
   groups: Array<RepoGroup>;
 };
 
-type ProjectsCache = {
-  data: ProjectsResponse;
-  fetchedAt: string;
-};
-
-const PROJECTS_CACHE_KEY = "github-light:projects-cache:v1";
-
-function readProjectsCache(): ProjectsCache | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(PROJECTS_CACHE_KEY);
-    if (!rawValue) {
-      return null;
-    }
-
-    const parsedValue = JSON.parse(rawValue) as Partial<ProjectsCache>;
-    if (!parsedValue?.data || !Array.isArray(parsedValue.data.groups)) {
-      return null;
-    }
-
-    return {
-      data: parsedValue.data,
-      fetchedAt:
-        typeof parsedValue.fetchedAt === "string"
-          ? parsedValue.fetchedAt
-          : new Date(0).toISOString(),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function writeProjectsCache(data: ProjectsResponse) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  const value: ProjectsCache = {
-    data,
-    fetchedAt: new Date().toISOString(),
-  };
-
-  window.localStorage.setItem(PROJECTS_CACHE_KEY, JSON.stringify(value));
-}
-
 function ProjectsPage() {
-  const cachedProjects = useMemo(() => readProjectsCache(), []);
-  const [cachedAt, setCachedAt] = useState<string | null>(
-    cachedProjects?.fetchedAt ?? null,
-  );
-  const lastSavedDataUpdatedAt = useRef<number>(
-    cachedProjects?.fetchedAt ? new Date(cachedProjects.fetchedAt).getTime() : 0,
-  );
   const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
 
@@ -114,30 +59,12 @@ function ProjectsPage() {
       }
       return (await response.json()) as ProjectsResponse;
     },
-    initialData: cachedProjects?.data,
-    initialDataUpdatedAt: cachedProjects?.fetchedAt
-      ? new Date(cachedProjects.fetchedAt).getTime()
-      : undefined,
     staleTime: 0,
     refetchOnMount: "always",
   });
 
-  useEffect(() => {
-    if (!projectsQuery.isSuccess) {
-      return;
-    }
-
-    if (projectsQuery.dataUpdatedAt <= lastSavedDataUpdatedAt.current) {
-      return;
-    }
-
-    writeProjectsCache(projectsQuery.data);
-    const refreshedAt = new Date(projectsQuery.dataUpdatedAt).toISOString();
-    setCachedAt(refreshedAt);
-    lastSavedDataUpdatedAt.current = projectsQuery.dataUpdatedAt;
-  }, [projectsQuery.data, projectsQuery.dataUpdatedAt, projectsQuery.isSuccess]);
-
   const projects = projectsQuery.data ?? null;
+  const cachedAt = projects ? new Date(projectsQuery.dataUpdatedAt).toISOString() : null;
   const isLoading = projectsQuery.isPending && !projects;
   const isRefreshing = projectsQuery.isFetching;
   const errorMessage = projectsQuery.error instanceof Error ? projectsQuery.error.message : null;

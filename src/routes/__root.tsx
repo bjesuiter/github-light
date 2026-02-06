@@ -1,13 +1,19 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import { useEffect, useState } from 'react'
 
 import appCss from '../styles.css?url'
 
 const queryClient = new QueryClient()
+const queryPersister = createSyncStoragePersister({
+  key: 'github-light:query-cache:v1',
+  storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+})
 const deployedAt = import.meta.env.VITE_DEPLOYED_AT || 'unknown'
 const deploymentHash = import.meta.env.VITE_DEPLOYMENT_HASH || 'unknown'
 
@@ -43,7 +49,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="bg-slate-950 text-slate-100">
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{
+            persister: queryPersister,
+            dehydrateOptions: {
+              shouldDehydrateQuery: (query) => query.queryKey[0] === 'projects',
+            },
+          }}
+        >
           <AuthControls />
           <div className="pb-16">{children}</div>
           <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-800 bg-slate-950/95 px-4 py-3 text-xs text-slate-400 backdrop-blur">
@@ -70,7 +84,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               },
             ]}
           />
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
         <Scripts />
       </body>
     </html>
