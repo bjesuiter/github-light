@@ -1,4 +1,4 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, useRouterState } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClient } from '@tanstack/react-query'
@@ -92,11 +92,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 }
 
 function AuthControls() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   useEffect(() => {
     let isCancelled = false
+
+    if (pathname === '/login') {
+      setIsLoggedIn(false)
+      return () => {
+        isCancelled = true
+      }
+    }
 
     const checkSession = async () => {
       try {
@@ -125,7 +135,7 @@ function AuthControls() {
     return () => {
       isCancelled = true
     }
-  }, [])
+  }, [pathname])
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -147,7 +157,7 @@ function AuthControls() {
     }
   }
 
-  if (!isLoggedIn) {
+  if (pathname === '/login' || !isLoggedIn) {
     return null
   }
 

@@ -9,6 +9,8 @@
 
 ### Remote Coding Mode
 - Always use `agent-browser` skill for seeing the page in a browser.
+- Local browser testing is currently not supported because GitHub OAuth is not configured for local URLs.
+- Always run browser tests against the production deployment.
 - After changing things, commit and push them, wait for Railway status to get to "successfully deployed", then check GitHub.bjesuiter.de with browser to see if the change worked.
 
 ## Tech Stack
