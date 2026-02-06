@@ -7,6 +7,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import appCss from '../styles.css?url'
 
 const queryClient = new QueryClient()
+const deployedAt = import.meta.env.VITE_DEPLOYED_AT || 'unknown'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -19,7 +20,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'GitHub Light',
       },
     ],
     links: [
@@ -42,6 +43,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <QueryClientProvider client={queryClient}>
           {children}
+          <footer className="border-t border-slate-800 bg-slate-950 px-4 py-3 text-xs text-slate-400">
+            Deployed on Railway:{' '}
+            <time dateTime={deployedAt} className="font-mono">
+              {deployedAt}
+            </time>{' '}
+            (UTC)
+          </footer>
           {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
           <TanStackDevtools
             config={{

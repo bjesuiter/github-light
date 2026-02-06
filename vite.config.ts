@@ -8,7 +8,15 @@ import { fileURLToPath, URL } from 'url'
 import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 
+const deployedAt =
+  process.env.RAILWAY_DEPLOYMENT_CREATED_AT ??
+  process.env.RAILWAY_DEPLOYMENT_TIMESTAMP ??
+  new Date().toISOString()
+
 const config = defineConfig({
+  define: {
+    'import.meta.env.VITE_DEPLOYED_AT': JSON.stringify(deployedAt),
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
