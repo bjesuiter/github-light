@@ -196,13 +196,24 @@ function ProjectsPage() {
 
         <div className="mt-8 space-y-6">
           {filteredGroups.map((group) => (
-            <section key={group.owner.login} className="rounded-xl border border-slate-800 bg-slate-900/60">
-              <header className="border-b border-slate-800 px-4 py-3">
+            <details
+              key={group.owner.login}
+              open
+              className="group rounded-xl border border-slate-800 bg-slate-900/60"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-slate-800 px-4 py-3 marker:content-none">
                 <h2 className="text-lg font-medium">
                   {group.owner.login}
                   <span className="ml-2 text-sm text-slate-400">({group.owner.type})</span>
+                  <span className="ml-2 text-sm text-slate-400">• {group.repos.length} repos</span>
                 </h2>
-              </header>
+                <span
+                  className="text-slate-400 transition-transform duration-200 group-open:rotate-180"
+                  aria-hidden="true"
+                >
+                  ▾
+                </span>
+              </summary>
               <ul className="divide-y divide-slate-800">
                 {group.repos.map((repo) => (
                   <li key={repo.id} className="px-4 py-3">
@@ -225,7 +236,7 @@ function ProjectsPage() {
                   </li>
                 ))}
               </ul>
-            </section>
+            </details>
           ))}
         </div>
       </div>
