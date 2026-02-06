@@ -52,7 +52,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+    <div className="min-h-[calc(100dvh-4rem)] bg-slate-950 text-slate-100 flex items-center justify-center p-6">
       <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
         <h1 className="text-2xl font-semibold tracking-tight">GitHub Light</h1>
         <p className="mt-2 text-slate-300">
