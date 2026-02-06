@@ -8,6 +8,7 @@ import appCss from '../styles.css?url'
 
 const queryClient = new QueryClient()
 const deployedAt = import.meta.env.VITE_DEPLOYED_AT || 'unknown'
+const deploymentHash = import.meta.env.VITE_DEPLOYMENT_HASH || 'unknown'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -44,11 +45,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
           {children}
           <footer className="border-t border-slate-800 bg-slate-950 px-4 py-3 text-xs text-slate-400">
-            Deployed on Railway:{' '}
-            <time dateTime={deployedAt} className="font-mono">
-              {deployedAt}
-            </time>{' '}
-            (UTC)
+            <p>
+              Deployed on Railway:{' '}
+              <time dateTime={deployedAt} className="font-mono">
+                {deployedAt}
+              </time>{' '}
+              (UTC)
+            </p>
+            <p>
+              Deployment hash: <span className="font-mono">{deploymentHash}</span>
+            </p>
           </footer>
           {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
           <TanStackDevtools

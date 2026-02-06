@@ -12,10 +12,12 @@ const deployedAt =
   process.env.RAILWAY_DEPLOYMENT_CREATED_AT ??
   process.env.RAILWAY_DEPLOYMENT_TIMESTAMP ??
   new Date().toISOString()
+const deploymentHash = process.env.RAILWAY_DEPLOYMENT_ID ?? 'unknown'
 
 const config = defineConfig({
   define: {
     'import.meta.env.VITE_DEPLOYED_AT': JSON.stringify(deployedAt),
+    'import.meta.env.VITE_DEPLOYMENT_HASH': JSON.stringify(deploymentHash),
   },
   resolve: {
     alias: {
