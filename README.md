@@ -19,6 +19,11 @@ The auth setup requires these variables:
 - `GITHUB_CLIENT_ID`
 - `GITHUB_CLIENT_SECRET`
 
+## Railway
+
+- Railway project for mini services: `bjesuiter.de`
+- Team conventions: `docs/railway-conventions.md`
+
 # Building For Production
 
 To build this application for production:

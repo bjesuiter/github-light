@@ -111,7 +111,7 @@ export const Route = createFileRoute("/api/projects")({
         const accessToken =
           typeof tokenResult === "string"
             ? tokenResult
-            : tokenResult?.accessToken ?? tokenResult?.token;
+            : tokenResult?.accessToken;
 
         if (!accessToken) {
           return json({ error: "Missing GitHub access token" }, { status: 401 });
@@ -143,7 +143,7 @@ export const Route = createFileRoute("/api/projects")({
 
         const ownOrgLogins = new Set(
           memberships
-            .filter((membership) => membership.role === "owner" || membership.role === "admin")
+            .filter((membership) => membership.role === "admin")
             .map((membership) => membership.organization.login.toLowerCase()),
         );
 
