@@ -7,6 +7,10 @@
 - When using `beansloop`, always use non-interactive testing.
 - Prod deployment is linked to this GitHub repo; to test, push the latest changes and wait for the Railway deploy to finish.
 
+### Remote Coding Mode
+- Always use `agent-browser` skill for seeing the page in a browser.
+- After changing things, commit and push them, wait for Railway status to get to "successfully deployed", then check GitHub.bjesuiter.de with browser to see if the change worked.
+
 ## Tech Stack
 - Runtime/package manager: `bun`
 - App framework: `@tanstack/react-start` (TanStack Start, file-based routes)
