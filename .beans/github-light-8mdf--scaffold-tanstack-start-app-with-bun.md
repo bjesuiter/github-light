@@ -5,13 +5,8 @@ status: completed
 type: task
 priority: high
 created_at: 2026-02-05T21:31:39Z
-updated_at: 2026-02-06T10:23:34Z
+updated_at: 2026-02-06T10:24:10Z
 parent: github-light-vi7d
-blocking:
-    - github-light-hq8e
-    - github-light-pdn8
-    - github-light-xxvx
-    - github-light-vx5b
 ---
 
 Initialize the app using the TanStack CLI and Bun.
