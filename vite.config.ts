@@ -4,6 +4,7 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import { fileURLToPath, URL } from 'url'
+import { execSync } from 'node:child_process'
 
 import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
@@ -12,12 +13,26 @@ const deployedAt =
   process.env.RAILWAY_DEPLOYMENT_CREATED_AT ??
   process.env.RAILWAY_DEPLOYMENT_TIMESTAMP ??
   new Date().toISOString()
-const deploymentHash = process.env.RAILWAY_DEPLOYMENT_ID ?? 'unknown'
+const commitHashFromGit = (() => {
+  try {
+    return execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+  } catch {
+    return null
+  }
+})()
+const buildCommitHash =
+  process.env.RAILWAY_GIT_COMMIT_SHA ??
+  process.env.GITHUB_SHA ??
+  process.env.SOURCE_VERSION ??
+  commitHashFromGit ??
+  'unknown'
 
 const config = defineConfig({
   define: {
     'import.meta.env.VITE_DEPLOYED_AT': JSON.stringify(deployedAt),
-    'import.meta.env.VITE_DEPLOYMENT_HASH': JSON.stringify(deploymentHash),
+    'import.meta.env.VITE_BUILD_COMMIT_HASH': JSON.stringify(buildCommitHash),
   },
   resolve: {
     alias: {

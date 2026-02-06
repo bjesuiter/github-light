@@ -15,7 +15,7 @@ const queryPersister = createSyncStoragePersister({
   storage: typeof window !== 'undefined' ? window.localStorage : undefined,
 })
 const deployedAt = import.meta.env.VITE_DEPLOYED_AT || 'unknown'
-const deploymentHash = import.meta.env.VITE_DEPLOYMENT_HASH || 'unknown'
+const buildCommitHash = import.meta.env.VITE_BUILD_COMMIT_HASH || 'unknown'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -69,7 +69,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               (UTC)
             </p>
             <p>
-              Deployment hash: <span className="font-mono">{deploymentHash}</span>
+              Commit hash: <span className="font-mono">{buildCommitHash}</span>
             </p>
           </footer>
           {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
