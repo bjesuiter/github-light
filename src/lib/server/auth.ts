@@ -11,8 +11,8 @@ export const auth = betterAuth({
     github: {
       clientId: authEnv.githubClientId,
       clientSecret: authEnv.githubClientSecret,
-      // GitHub Apps use app permissions instead of OAuth scopes.
-      disableDefaultScope: true,
+      // Minimal OAuth scopes for this app's feature set.
+      scope: ["user:email", "read:org", "repo"],
     },
   },
   session: {
