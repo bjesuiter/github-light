@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
+import { useEffect, useMemo, useState } from "react";
 
 import { auth } from "@/lib/server/auth";
 
@@ -18,14 +19,188 @@ export const Route = createFileRoute("/projects")({
   component: ProjectsPage,
 });
 
+type Repo = {
+  id: number;
+  name: string;
+  full_name: string;
+  html_url: string;
+  description: string | null;
+  archived: boolean;
+  updated_at: string;
+  stargazers_count: number;
+};
+
+type RepoGroup = {
+  owner: {
+    login: string;
+    type: "User" | "Organization";
+    avatarUrl: string;
+    isViewer: boolean;
+    isOwnOrg: boolean;
+  };
+  repos: Array<Repo>;
+};
+
+type ProjectsResponse = {
+  groups: Array<RepoGroup>;
+};
+
 function ProjectsPage() {
+  const [projects, setProjects] = useState<ProjectsResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadProjects = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/projects", { credentials: "include" });
+        if (!response.ok) {
+          throw new Error(`Failed to load projects (${response.status})`);
+        }
+        const data = (await response.json()) as ProjectsResponse;
+        if (!isCancelled) {
+          setProjects(data);
+          setError(null);
+        }
+      } catch (loadError) {
+        if (!isCancelled) {
+          setError(loadError instanceof Error ? loadError.message : "Failed to load projects");
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadProjects();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  const filteredGroups = useMemo(() => {
+    const lowerQuery = query.trim().toLowerCase();
+    const groups = projects?.groups ?? [];
+
+    return groups
+      .map((group) => {
+        const repos = group.repos.filter((repo) => {
+          if (!showArchived && repo.archived) {
+            return false;
+          }
+
+          if (!lowerQuery) {
+            return true;
+          }
+
+          return (
+            repo.name.toLowerCase().includes(lowerQuery) ||
+            repo.full_name.toLowerCase().includes(lowerQuery) ||
+            group.owner.login.toLowerCase().includes(lowerQuery)
+          );
+        });
+
+        return {
+          ...group,
+          repos,
+        };
+      })
+      .filter((group) => group.repos.length > 0);
+  }, [projects, query, showArchived]);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
       <div className="mx-auto max-w-5xl">
         <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
-        <p className="mt-2 text-slate-300">
-          Auth wiring is complete. Project list UI comes in the next bean.
+        <p className="mt-2 text-slate-300">Find repositories across all accessible owners.</p>
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search by repo or owner"
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-slate-100 placeholder-slate-400 focus:border-slate-500 focus:outline-none"
+          />
+          <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(event) => setShowArchived(event.target.checked)}
+              className="h-4 w-4 rounded border-slate-600 bg-slate-900"
+            />
+            Show archived
+          </label>
+        </div>
+
+        <p className="mt-4 text-sm text-slate-400">
+          Can&apos;t find your repo?{" "}
+          <a
+            href="https://github.com/settings/installations"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="underline hover:text-slate-200"
+          >
+            Check permissions here
+          </a>{" "}
+          and activate the missing user/org.
         </p>
+
+        {isLoading ? (
+          <p className="mt-8 text-slate-300">Loading projects...</p>
+        ) : null}
+
+        {error ? (
+          <p className="mt-8 rounded-lg border border-red-800 bg-red-950/40 p-4 text-red-200">
+            {error}
+          </p>
+        ) : null}
+
+        {!isLoading && !error && filteredGroups.length === 0 ? (
+          <p className="mt-8 text-slate-300">No repositories match your filters.</p>
+        ) : null}
+
+        <div className="mt-8 space-y-6">
+          {filteredGroups.map((group) => (
+            <section key={group.owner.login} className="rounded-xl border border-slate-800 bg-slate-900/60">
+              <header className="border-b border-slate-800 px-4 py-3">
+                <h2 className="text-lg font-medium">
+                  {group.owner.login}
+                  <span className="ml-2 text-sm text-slate-400">({group.owner.type})</span>
+                </h2>
+              </header>
+              <ul className="divide-y divide-slate-800">
+                {group.repos.map((repo) => (
+                  <li key={repo.id} className="px-4 py-3">
+                    <a
+                      href={repo.html_url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="text-slate-100 font-medium hover:text-white hover:underline"
+                    >
+                      {repo.full_name}
+                    </a>
+                    <p className="mt-1 text-sm text-slate-400">
+                      {repo.description ?? "No description"}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-400">
+                      <span>Stars: {repo.stargazers_count}</span>
+                      <span>Updated: {new Date(repo.updated_at).toLocaleDateString()}</span>
+                      {repo.archived ? <span>Archived</span> : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       </div>
     </div>
   );
