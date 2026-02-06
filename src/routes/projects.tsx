@@ -1,7 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { auth } from "@/lib/server/auth";
 
@@ -45,45 +46,103 @@ type ProjectsResponse = {
   groups: Array<RepoGroup>;
 };
 
+type ProjectsCache = {
+  data: ProjectsResponse;
+  fetchedAt: string;
+};
+
+const PROJECTS_CACHE_KEY = "github-light:projects-cache:v1";
+
+function readProjectsCache(): ProjectsCache | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(PROJECTS_CACHE_KEY);
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue) as Partial<ProjectsCache>;
+    if (!parsedValue?.data || !Array.isArray(parsedValue.data.groups)) {
+      return null;
+    }
+
+    return {
+      data: parsedValue.data,
+      fetchedAt:
+        typeof parsedValue.fetchedAt === "string"
+          ? parsedValue.fetchedAt
+          : new Date(0).toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeProjectsCache(data: ProjectsResponse) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const value: ProjectsCache = {
+    data,
+    fetchedAt: new Date().toISOString(),
+  };
+
+  window.localStorage.setItem(PROJECTS_CACHE_KEY, JSON.stringify(value));
+}
+
 function ProjectsPage() {
-  const [projects, setProjects] = useState<ProjectsResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedProjects = useMemo(() => readProjectsCache(), []);
+  const [cachedAt, setCachedAt] = useState<string | null>(
+    cachedProjects?.fetchedAt ?? null,
+  );
+  const lastSavedDataUpdatedAt = useRef<number>(
+    cachedProjects?.fetchedAt ? new Date(cachedProjects.fetchedAt).getTime() : 0,
+  );
   const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
 
-  useEffect(() => {
-    let isCancelled = false;
-
-    const loadProjects = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch("/api/projects", { credentials: "include" });
-        if (!response.ok) {
-          throw new Error(`Failed to load projects (${response.status})`);
-        }
-        const data = (await response.json()) as ProjectsResponse;
-        if (!isCancelled) {
-          setProjects(data);
-          setError(null);
-        }
-      } catch (loadError) {
-        if (!isCancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load projects");
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: async (): Promise<ProjectsResponse> => {
+      const response = await fetch("/api/projects", { credentials: "include" });
+      if (!response.ok) {
+        throw new Error(`Failed to load projects (${response.status})`);
       }
-    };
+      return (await response.json()) as ProjectsResponse;
+    },
+    initialData: cachedProjects?.data,
+    initialDataUpdatedAt: cachedProjects?.fetchedAt
+      ? new Date(cachedProjects.fetchedAt).getTime()
+      : undefined,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
 
-    loadProjects();
+  useEffect(() => {
+    if (!projectsQuery.isSuccess) {
+      return;
+    }
 
-    return () => {
-      isCancelled = true;
-    };
-  }, []);
+    if (projectsQuery.dataUpdatedAt <= lastSavedDataUpdatedAt.current) {
+      return;
+    }
+
+    writeProjectsCache(projectsQuery.data);
+    const refreshedAt = new Date(projectsQuery.dataUpdatedAt).toISOString();
+    setCachedAt(refreshedAt);
+    lastSavedDataUpdatedAt.current = projectsQuery.dataUpdatedAt;
+  }, [projectsQuery.data, projectsQuery.dataUpdatedAt, projectsQuery.isSuccess]);
+
+  const projects = projectsQuery.data ?? null;
+  const isLoading = projectsQuery.isPending && !projects;
+  const isRefreshing = projectsQuery.isFetching;
+  const errorMessage = projectsQuery.error instanceof Error ? projectsQuery.error.message : null;
+  const hasErrorWithoutCachedData = projectsQuery.isError && !projects;
+  const hasErrorWithCachedData = projectsQuery.isError && Boolean(projects);
 
   const filteredGroups = useMemo(() => {
     const lowerQuery = query.trim().toLowerCase();
@@ -116,10 +175,43 @@ function ProjectsPage() {
   }, [projects, query, showArchived]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
+    <div className="min-h-[calc(100dvh-4rem)] bg-slate-950 text-slate-100 p-6">
       <div className="mx-auto max-w-5xl">
         <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
         <p className="mt-2 text-slate-300">Find repositories across all accessible owners.</p>
+        {isRefreshing ? (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-slate-300">
+            <svg
+              className="h-4 w-4 animate-spin text-slate-200"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+                className="opacity-30"
+                fill="none"
+              />
+              <path
+                d="M22 12a10 10 0 0 1-10 10"
+                stroke="currentColor"
+                strokeWidth="3"
+                className="opacity-100"
+                fill="none"
+              />
+            </svg>
+            Refreshing repositories...
+          </div>
+        ) : null}
+        {cachedAt && !isRefreshing ? (
+          <p className="mt-3 text-xs text-slate-400">
+            Showing cached data last refreshed at{" "}
+            <time dateTime={cachedAt}>{new Date(cachedAt).toLocaleTimeString()}</time>.
+          </p>
+        ) : null}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
           <input
@@ -157,13 +249,21 @@ function ProjectsPage() {
           <p className="mt-8 text-slate-300">Loading projects...</p>
         ) : null}
 
-        {error ? (
-          <p className="mt-8 rounded-lg border border-red-800 bg-red-950/40 p-4 text-red-200">
-            {error}
+        {hasErrorWithoutCachedData || hasErrorWithCachedData ? (
+          <p
+            className={`mt-8 rounded-lg border p-4 ${
+              hasErrorWithCachedData
+                ? "border-amber-700 bg-amber-950/30 text-amber-200"
+                : "border-red-800 bg-red-950/40 text-red-200"
+            }`}
+          >
+            {hasErrorWithCachedData
+              ? `Failed to refresh projects. Showing cached data. (${errorMessage ?? "Unknown error"})`
+              : errorMessage ?? "Failed to load projects"}
           </p>
         ) : null}
 
-        {!isLoading && !error && filteredGroups.length === 0 ? (
+        {!isLoading && !hasErrorWithoutCachedData && filteredGroups.length === 0 ? (
           <p className="mt-8 text-slate-300">No repositories match your filters.</p>
         ) : null}
 
