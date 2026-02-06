@@ -19,6 +19,19 @@ The auth setup requires these variables:
 - `GITHUB_CLIENT_ID`
 - `GITHUB_CLIENT_SECRET`
 
+Use a GitHub App (not an OAuth app) for `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`.
+Recommended GitHub App setup for this project:
+
+- Callback URL: `https://<your-domain>/api/auth/callback/github`
+- Webhook URL: not required
+- Repository permissions:
+  - `Metadata`: `Read-only`
+- Organization permissions:
+  - `Members`: `Read-only` (for org membership grouping)
+- Account permissions:
+  - `Email addresses`: `Read-only` (used during sign-in profile lookup)
+- Install the app only on selected repositories/orgs to keep access minimal.
+
 ## Railway
 
 - Railway project for mini services: `bjesuiter.de`
