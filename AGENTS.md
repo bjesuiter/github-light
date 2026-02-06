@@ -5,6 +5,7 @@
 - Use the `agent-browser` skill to run browser tests autonomously without requiring user interaction.
 - Use the `playwrighter` skill to run browser tests collaboratively with the user when explicitly requested.
 - When using `beansloop`, always use non-interactive testing.
+- Prod deployment is linked to this GitHub repo; to test, push the latest changes and wait for the Railway deploy to finish.
 
 ## Tech Stack
 - Runtime/package manager: `bun`
