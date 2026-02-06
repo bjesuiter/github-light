@@ -47,6 +47,15 @@ type RepoGroup = {
 
 const GITHUB_API_BASE = "https://api.github.com";
 
+class GitHubApiError extends Error {
+  status: number;
+
+  constructor(status: number, url: string) {
+    super(`GitHub API request failed (${status}) for ${url}`);
+    this.status = status;
+  }
+}
+
 async function fetchGitHubPage<T>(url: string, accessToken: string): Promise<Array<T>> {
   const response = await fetch(url, {
     headers: {
@@ -58,7 +67,7 @@ async function fetchGitHubPage<T>(url: string, accessToken: string): Promise<Arr
   });
 
   if (!response.ok) {
-    throw new Error(`GitHub API request failed (${response.status}) for ${url}`);
+    throw new GitHubApiError(response.status, url);
   }
 
   return (await response.json()) as Array<T>;
@@ -117,29 +126,40 @@ export const Route = createFileRoute("/api/projects")({
           return json({ error: "Missing GitHub access token" }, { status: 401 });
         }
 
-        const [user, memberships, repos] = await Promise.all([
-          (async () => {
-            const response = await fetch(`${GITHUB_API_BASE}/user`, {
-              headers: {
-                Accept: "application/vnd.github+json",
-                Authorization: `Bearer ${accessToken}`,
-                "User-Agent": "github-light",
-                "X-GitHub-Api-Version": "2022-11-28",
-              },
-            });
+        const userResponse = await fetch(`${GITHUB_API_BASE}/user`, {
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${accessToken}`,
+            "User-Agent": "github-light",
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        });
 
-            if (!response.ok) {
-              throw new Error(`GitHub API request failed (${response.status}) for /user`);
-            }
+        if (!userResponse.ok) {
+          return json({ error: "GitHub user profile access denied" }, { status: 401 });
+        }
 
-            return (await response.json()) as GitHubUser;
-          })(),
-          fetchAllPages<GitHubOrgMembership>("/user/memberships/orgs", accessToken),
-          fetchAllPages<GitHubRepo>(
-            "/user/repos?affiliation=owner,organization_member&sort=updated",
-            accessToken,
-          ),
-        ]);
+        const user = (await userResponse.json()) as GitHubUser;
+
+        const memberships = await fetchAllPages<GitHubOrgMembership>(
+          "/user/memberships/orgs",
+          accessToken,
+        ).catch((error) => {
+          if (error instanceof GitHubApiError && (error.status === 403 || error.status === 404)) {
+            return [];
+          }
+          throw error;
+        });
+
+        const repos = await fetchAllPages<GitHubRepo>(
+          "/user/repos?affiliation=owner,organization_member&sort=updated",
+          accessToken,
+        ).catch((error) => {
+          if (error instanceof GitHubApiError && (error.status === 403 || error.status === 404)) {
+            return [];
+          }
+          throw error;
+        });
 
         const ownOrgLogins = new Set(
           memberships
