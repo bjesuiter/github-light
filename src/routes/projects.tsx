@@ -48,9 +48,15 @@ type ProjectsResponse = {
   groups: Array<RepoGroup>;
 };
 
+type FlattenedRepo = Repo & {
+  ownerLogin: string;
+  ownerType: RepoGroup["owner"]["type"];
+};
+
 function ProjectsPage() {
   const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [groupByOwner, setGroupByOwner] = useState(true);
 
   const projectsQuery = useQuery({
     queryKey: ["projects"],
@@ -102,6 +108,16 @@ function ProjectsPage() {
       })
       .filter((group) => group.repos.length > 0);
   }, [projects, query, showArchived]);
+
+  const filteredRepos = useMemo<FlattenedRepo[]>(() => {
+    return filteredGroups.flatMap((group) =>
+      group.repos.map((repo) => ({
+        ...repo,
+        ownerLogin: group.owner.login,
+        ownerType: group.owner.type,
+      })),
+    );
+  }, [filteredGroups]);
 
   return (
     <div className="min-h-[calc(100dvh-4rem)] bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 px-4 py-6 text-slate-100 sm:px-6">
@@ -160,6 +176,15 @@ function ProjectsPage() {
             />
             Show archived
           </label>
+          <label className="inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200">
+            <input
+              type="checkbox"
+              checked={groupByOwner}
+              onChange={(event) => setGroupByOwner(event.target.checked)}
+              className="h-4 w-4 rounded border-slate-500 bg-slate-900"
+            />
+            Group by owner
+          </label>
         </div>
 
         <p className="mt-4 text-sm text-slate-400">
@@ -193,82 +218,112 @@ function ProjectsPage() {
           </p>
         ) : null}
 
-          {!isLoading && !hasErrorWithoutCachedData && filteredGroups.length === 0 ? (
+          {!isLoading &&
+          !hasErrorWithoutCachedData &&
+          (groupByOwner ? filteredGroups.length === 0 : filteredRepos.length === 0) ? (
             <p className="mt-8 text-slate-300">No repositories match your filters.</p>
           ) : null}
         </div>
 
-        <div className="mt-8 space-y-5">
-          {filteredGroups.map((group) => (
-            <details
-              key={group.owner.login}
-              open
-              className="group overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900/50 shadow-lg shadow-slate-950/25"
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-slate-700/80 bg-slate-800/45 px-4 py-3.5 marker:content-none transition hover:bg-slate-800/70">
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/15 text-sm font-semibold text-cyan-200">
-                    {group.owner.login.slice(0, 1).toUpperCase()}
-                  </span>
-                  <h2 className="truncate text-lg font-medium text-slate-100">
-                    {group.owner.login}
-                    <span className="ml-2 text-sm text-slate-400">({group.owner.type})</span>
-                    <span className="ml-2 rounded-full bg-slate-700/70 px-2 py-0.5 text-xs text-slate-300">
-                      {group.repos.length} repos
-                    </span>
-                  </h2>
-                </div>
-                <ChevronDown
-                  className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-open:rotate-180"
-                  aria-hidden="true"
+        {groupByOwner ? (
+          <div className="mt-8 space-y-5">
+            {filteredGroups.map((group) => (
+              <details
+                key={group.owner.login}
+                open
+                className="group overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900/50 shadow-lg shadow-slate-950/25"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-slate-700/80 bg-slate-800/45 px-4 py-3.5 marker:content-none transition hover:bg-slate-800/70">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <img
+                      src={group.owner.avatarUrl}
+                      alt={`${group.owner.login} avatar`}
+                      className="h-8 w-8 rounded-full border border-slate-600/80 object-cover"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
+                    <h2 className="truncate text-lg font-medium text-slate-100">
+                      {group.owner.login}
+                      <span className="ml-2 text-sm text-slate-400">({group.owner.type})</span>
+                      <span className="ml-2 rounded-full bg-slate-700/70 px-2 py-0.5 text-xs text-slate-300">
+                        {group.repos.length} repos
+                      </span>
+                    </h2>
+                  </div>
+                  <ChevronDown
+                    className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-open:rotate-180"
+                    aria-hidden="true"
+                  />
+                </summary>
+                <ul className="divide-y divide-slate-700/70">
+                  {group.repos.map((repo) => (
+                    <ProjectListItem key={repo.id} repo={repo} />
+                  ))}
+                </ul>
+              </details>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-8 overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900/50 shadow-lg shadow-slate-950/25">
+            <ul className="divide-y divide-slate-700/70">
+              {filteredRepos.map((repo) => (
+                <ProjectListItem
+                  key={repo.id}
+                  repo={repo}
+                  ownerLabel={`${repo.ownerLogin} (${repo.ownerType})`}
                 />
-              </summary>
-              <ul className="divide-y divide-slate-700/70">
-                {group.repos.map((repo) => {
-                  const updatedAtDate = parseISO(repo.updated_at);
-                  const updatedRelative = formatDistanceToNow(updatedAtDate, { addSuffix: true });
-                  const updatedExact = format(updatedAtDate, "MMM d, yyyy");
-
-                  return (
-                    <li key={repo.id} className="px-4 py-3.5 transition hover:bg-slate-800/45">
-                      <a
-                        href={repo.html_url}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="inline-flex items-center gap-1.5 font-medium text-slate-100 hover:text-white hover:underline"
-                      >
-                        {repo.full_name}
-                        <ExternalLink className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
-                      </a>
-                      <p className="mt-1.5 text-sm text-slate-300/90">
-                        {repo.description ?? "No description"}
-                      </p>
-                      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-300">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-700/70 px-2 py-1">
-                          <Star className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
-                          {repo.stargazers_count}
-                        </span>
-                        <span
-                          className="inline-flex items-center gap-1 rounded-full bg-slate-700/70 px-2 py-1"
-                          title={updatedExact}
-                        >
-                          <Timer className="h-3.5 w-3.5 text-cyan-300" aria-hidden="true" />
-                          Updated {updatedRelative}
-                        </span>
-                        {repo.archived ? (
-                          <span className="inline-flex items-center rounded-full bg-amber-900/50 px-2 py-1 text-amber-200">
-                            Archived
-                          </span>
-                        ) : null}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </details>
-          ))}
-        </div>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function ProjectListItem({ repo, ownerLabel }: { repo: Repo; ownerLabel?: string }) {
+  const updatedAtDate = parseISO(repo.updated_at);
+  const updatedRelative = formatDistanceToNow(updatedAtDate, { addSuffix: true });
+  const updatedExact = format(updatedAtDate, "MMM d, yyyy");
+
+  return (
+    <li className="px-4 py-3.5 transition hover:bg-slate-800/45">
+      <a
+        href={repo.html_url}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="inline-flex items-center gap-1.5 font-medium text-slate-100 hover:text-white hover:underline"
+      >
+        {repo.full_name}
+        <ExternalLink className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+      </a>
+      <p className="mt-1.5 text-sm text-slate-300/90">{repo.description ?? "No description"}</p>
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+        {ownerLabel ? (
+          <span className="inline-flex items-center rounded-full bg-slate-700/70 px-2 py-1">
+            {ownerLabel}
+          </span>
+        ) : null}
+        <span className="inline-flex items-center gap-1 rounded-full bg-slate-700/70 px-2 py-1">
+          <Star className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
+          {repo.stargazers_count}
+        </span>
+        <span
+          className="inline-flex items-center gap-1 rounded-full bg-slate-700/70 px-2 py-1"
+          title={updatedExact}
+        >
+          <Timer className="h-3.5 w-3.5 text-cyan-300" aria-hidden="true" />
+          Updated {updatedRelative}
+        </span>
+        {repo.archived ? (
+          <span className="inline-flex items-center rounded-full bg-amber-900/50 px-2 py-1 text-amber-200">
+            Archived
+          </span>
+        ) : null}
+      </div>
+    </li>
   );
 }
