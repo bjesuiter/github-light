@@ -12,12 +12,16 @@ function LoginPage() {
         <p className="mt-2 text-slate-300">
           Sign in with GitHub to view your projects.
         </p>
-        <a
-          href="/api/auth/sign-in/social?provider=github&callbackURL=%2Fprojects"
-          className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-slate-100 px-4 py-3 text-slate-900 font-medium hover:bg-white"
-        >
-          Continue with GitHub
-        </a>
+        <form action="/api/auth/sign-in/social" method="post" className="mt-6">
+          <input type="hidden" name="provider" value="github" />
+          <input type="hidden" name="callbackURL" value="/projects" />
+          <button
+            type="submit"
+            className="inline-flex w-full items-center justify-center rounded-lg bg-slate-100 px-4 py-3 text-slate-900 font-medium hover:bg-white"
+          >
+            Continue with GitHub
+          </button>
+        </form>
       </div>
     </div>
   );
