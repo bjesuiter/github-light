@@ -35,4 +35,4 @@
 - `package.json`: scripts and dependency definitions
 - `vite.config.ts`: Vite + TanStack + Nitro plugin configuration
 - `tsconfig.json`: TypeScript settings
-- `nixpacks.toml`: Railway/Nixpacks deployment configuration
+- `railway.json`: Railway build/deploy configuration
