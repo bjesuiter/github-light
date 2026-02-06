@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useMemo, useState } from "react";
+import { ChevronDown, ExternalLink } from "lucide-react";
 
 import { auth } from "@/lib/server/auth";
 
@@ -207,12 +208,10 @@ function ProjectsPage() {
                   <span className="ml-2 text-sm text-slate-400">({group.owner.type})</span>
                   <span className="ml-2 text-sm text-slate-400">• {group.repos.length} repos</span>
                 </h2>
-                <span
-                  className="text-slate-400 transition-transform duration-200 group-open:rotate-180"
+                <ChevronDown
+                  className="h-4 w-4 text-slate-400 transition-transform duration-200 group-open:rotate-180"
                   aria-hidden="true"
-                >
-                  ▾
-                </span>
+                />
               </summary>
               <ul className="divide-y divide-slate-800">
                 {group.repos.map((repo) => (
@@ -221,9 +220,10 @@ function ProjectsPage() {
                       href={repo.html_url}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className="text-slate-100 font-medium hover:text-white hover:underline"
+                      className="inline-flex items-center gap-1 text-slate-100 font-medium hover:text-white hover:underline"
                     >
                       {repo.full_name}
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                     </a>
                     <p className="mt-1 text-sm text-slate-400">
                       {repo.description ?? "No description"}
