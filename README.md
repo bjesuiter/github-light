@@ -5,9 +5,19 @@ Welcome to your new TanStack app!
 To run this application:
 
 ```bash
+cp .env.example .env
 bun install
 bun --bun run dev
 ```
+
+## Environment Variables
+
+The auth setup requires these variables:
+
+- `APP_BASE_URL`
+- `BETTER_AUTH_SECRET`
+- `GITHUB_CLIENT_ID`
+- `GITHUB_CLIENT_SECRET`
 
 # Building For Production
 
