@@ -11,7 +11,8 @@ export const auth = betterAuth({
     github: {
       clientId: authEnv.githubClientId,
       clientSecret: authEnv.githubClientSecret,
-      // Minimal OAuth scopes for this app's feature set.
+      // Keep OAuth flow but request only the exact scopes we need.
+      disableDefaultScope: true,
       scope: ["user:email", "read:org", "repo"],
     },
   },
