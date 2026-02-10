@@ -58,11 +58,12 @@ function ProjectsPage() {
   const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [groupByOwner, setGroupByOwner] = useState(true);
+  const [sortMode, setSortMode] = useState<"name" | "recent">("name");
 
   const projectsQuery = useQuery({
-    queryKey: ["projects"],
+    queryKey: ["projects", sortMode],
     queryFn: async (): Promise<ProjectsResponse> => {
-      const response = await fetch("/api/projects", { credentials: "include" });
+      const response = await fetch(`/api/projects?sort=${sortMode}`, { credentials: "include" });
       if (!response.ok) {
         throw new Error(`Failed to load projects (${response.status})`);
       }
@@ -104,21 +105,33 @@ function ProjectsPage() {
 
         return {
           ...group,
-          repos,
+          repos: repos
+            .slice()
+            .sort((a, b) =>
+              sortMode === "recent"
+                ? new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+                : a.name.localeCompare(b.name),
+            ),
         };
       })
       .filter((group) => group.repos.length > 0);
-  }, [projects, query, showArchived]);
+  }, [projects, query, showArchived, sortMode]);
 
   const filteredRepos = useMemo<FlattenedRepo[]>(() => {
-    return filteredGroups.flatMap((group) =>
+    const repos = filteredGroups.flatMap((group) =>
       group.repos.map((repo) => ({
         ...repo,
         ownerLogin: group.owner.login,
         ownerType: group.owner.type,
       })),
     );
-  }, [filteredGroups]);
+
+    return repos.sort((a, b) =>
+      sortMode === "recent"
+        ? new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        : a.name.localeCompare(b.name),
+    );
+  }, [filteredGroups, sortMode]);
 
   return (
     <div className="min-h-[calc(100dvh-4rem)] bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 px-4 py-6 text-slate-100 sm:px-6">
@@ -168,6 +181,22 @@ function ProjectsPage() {
             placeholder="Search by repo or owner"
             className="w-full rounded-xl border border-slate-600 bg-slate-800/90 px-4 py-2.5 text-slate-100 placeholder-slate-400 shadow-inner shadow-slate-950/30 outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-500/20"
           />
+          <label className="inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200">
+            Sort by
+            <span className="relative inline-flex items-center">
+              <select
+                value={sortMode}
+                onChange={(event) =>
+                  setSortMode(event.target.value === "recent" ? "recent" : "name")
+                }
+                className="appearance-none rounded-lg border border-slate-500/70 bg-slate-900/80 py-1 pl-3 pr-8 text-sm text-slate-100 shadow-inner outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-500/20"
+              >
+                <option value="name">Name (A-Z)</option>
+                <option value="recent">Recently used</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 h-3.5 w-3.5 text-slate-400" />
+            </span>
+          </label>
           <label className="inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200">
             <input
               type="checkbox"
