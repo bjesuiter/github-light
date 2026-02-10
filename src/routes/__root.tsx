@@ -9,7 +9,15 @@ import { useEffect, useState } from 'react'
 
 import appCss from '../styles.css?url'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 1000 * 60 * 5,
+    },
+  },
+})
 const queryPersister = createSyncStoragePersister({
   key: 'github-light:query-cache:v1',
   storage: typeof window !== 'undefined' ? window.localStorage : undefined,
