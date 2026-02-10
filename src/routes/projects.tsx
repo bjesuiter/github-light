@@ -4,7 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
-import { ChevronDown, ExternalLink, Star, Timer } from "lucide-react";
+import { ChevronDown, ExternalLink, Lock, Globe, Star, Timer } from "lucide-react";
 
 import { auth } from "@/lib/server/auth";
 
@@ -28,6 +28,7 @@ type Repo = {
   full_name: string;
   html_url: string;
   description: string | null;
+  private: boolean;
   archived: boolean;
   updated_at: string;
   stargazers_count: number;
@@ -323,6 +324,17 @@ function ProjectListItem({ repo, ownerLabel }: { repo: Repo; ownerLabel?: string
             Archived
           </span>
         ) : null}
+        {repo.private ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-900/50 px-2 py-1 text-red-200">
+            <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+            Private
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full bg-green-900/50 px-2 py-1 text-green-200">
+            <Globe className="h-3.5 w-3.5" aria-hidden="true" />
+            Public
+          </span>
+        )}
       </div>
     </li>
   );
