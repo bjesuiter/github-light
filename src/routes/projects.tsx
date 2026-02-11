@@ -4,7 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
-import { ChevronDown, ExternalLink, Lock, Globe, Star, Timer } from "lucide-react";
+import { ChevronDown, ExternalLink, Lock, Globe, Star, Timer, RefreshCw } from "lucide-react";
 
 import { auth } from "@/lib/server/auth";
 
@@ -80,6 +80,10 @@ function ProjectsPage() {
   const errorMessage = projectsQuery.error instanceof Error ? projectsQuery.error.message : null;
   const hasErrorWithoutCachedData = projectsQuery.isError && !projects;
   const hasErrorWithCachedData = projectsQuery.isError && Boolean(projects);
+
+  const handleManualRefresh = () => {
+    void projectsQuery.refetch();
+  };
 
   const filteredGroups = useMemo(() => {
     const lowerQuery = query.trim().toLowerCase();
@@ -181,6 +185,15 @@ function ProjectsPage() {
             placeholder="Search by repo or owner"
             className="w-full rounded-xl border border-slate-600 bg-slate-800/90 px-4 py-2.5 text-slate-100 placeholder-slate-400 shadow-inner shadow-slate-950/30 outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-500/20"
           />
+          <button
+            type="button"
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-100 transition hover:bg-slate-700/80 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? "Refreshing..." : "Refresh now"}
+          </button>
           <label className="inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200">
             Sort by
             <span className="relative inline-flex items-center">
