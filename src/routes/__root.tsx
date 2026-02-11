@@ -9,12 +9,17 @@ import { useEffect, useState } from 'react'
 
 import appCss from '../styles.css?url'
 
+const PERSISTED_QUERY_MAX_AGE_MS = 1000 * 60 * 60 * 24
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       staleTime: 1000 * 60 * 5,
+      // Keep query data around long enough for persistence to restore stale data
+      // on reload, then refetch in the background.
+      gcTime: PERSISTED_QUERY_MAX_AGE_MS,
     },
   },
 })
@@ -61,6 +66,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           client={queryClient}
           persistOptions={{
             persister: queryPersister,
+            maxAge: PERSISTED_QUERY_MAX_AGE_MS,
             dehydrateOptions: {
               shouldDehydrateQuery: (query) => query.queryKey[0] === 'projects',
             },
