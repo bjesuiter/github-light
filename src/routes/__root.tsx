@@ -10,6 +10,8 @@ import { useEffect, useState } from 'react'
 import appCss from '../styles.css?url'
 
 const PERSISTED_QUERY_MAX_AGE_MS = 1000 * 60 * 60 * 24
+const MILLISECONDS_PER_HOUR = 1000 * 60 * 60
+const REFRESH_DEPLOY_RELATIVE_TIME_MS = 1000 * 60
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,6 +31,22 @@ const queryPersister = createSyncStoragePersister({
 })
 const deployedAt = import.meta.env.VITE_DEPLOYED_AT || 'unknown'
 const buildCommitHash = import.meta.env.VITE_BUILD_COMMIT_HASH || 'unknown'
+
+function formatRelativeDeployTime(deployedAtIso: string, nowMs: number) {
+  if (deployedAtIso === 'unknown') {
+    return 'unknown'
+  }
+
+  const deployedAtMs = Date.parse(deployedAtIso)
+
+  if (Number.isNaN(deployedAtMs)) {
+    return 'unknown'
+  }
+
+  const hoursAgo = Math.max(0, Math.floor((nowMs - deployedAtMs) / MILLISECONDS_PER_HOUR))
+
+  return `${hoursAgo} hour${hoursAgo === 1 ? '' : 's'} ago`
+}
 
 export const Route = createRootRoute({
   head: () => ({
@@ -56,6 +74,20 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const [nowMs, setNowMs] = useState(() => Date.now())
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now())
+    }, REFRESH_DEPLOY_RELATIVE_TIME_MS)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
+  const relativeDeployTime = formatRelativeDeployTime(deployedAt, nowMs)
+
   return (
     <html lang="en">
       <head>
@@ -75,16 +107,24 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <AuthControls />
           <div className="pb-16">{children}</div>
           <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-800 bg-slate-950/95 px-4 py-3 text-xs text-slate-400 backdrop-blur">
-            <p>
-              Deployed on Railway:{' '}
-              <time dateTime={deployedAt} className="font-mono">
-                {deployedAt}
-              </time>{' '}
-              (UTC)
-            </p>
-            <p>
-              Commit hash: <span className="font-mono">{buildCommitHash}</span>
-            </p>
+            <div className="mx-auto w-full text-center [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+              <p>
+                Deploy Time:{' '}
+                <time
+                  dateTime={deployedAt}
+                  className="font-mono"
+                  suppressHydrationWarning
+                  title={deployedAt === 'unknown' ? undefined : `${deployedAt} (UTC)`}
+                >
+                  {relativeDeployTime === 'unknown'
+                    ? 'unknown'
+                    : `last deployed: ${relativeDeployTime}`}
+                </time>
+              </p>
+              <p>
+                Commit hash: <span className="font-mono">{buildCommitHash}</span>
+              </p>
+            </div>
           </footer>
           {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
           <TanStackDevtools
