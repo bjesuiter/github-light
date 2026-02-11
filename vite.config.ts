@@ -29,6 +29,9 @@ const buildCommitHash =
   commitHashFromGit ??
   'unknown'
 
+const parsedDevtoolsPort = Number(process.env.TANSTACK_DEVTOOLS_PORT ?? '42070')
+const devtoolsEventBusPort = Number.isFinite(parsedDevtoolsPort) ? parsedDevtoolsPort : 42070
+
 const config = defineConfig({
   define: {
     'import.meta.env.VITE_DEPLOYED_AT': JSON.stringify(deployedAt),
@@ -40,7 +43,11 @@ const config = defineConfig({
     },
   },
   plugins: [
-    devtools(),
+    devtools({
+      eventBusConfig: {
+        port: devtoolsEventBusPort,
+      },
+    }),
     nitro(),
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
