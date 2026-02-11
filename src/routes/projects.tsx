@@ -231,7 +231,12 @@ function ProjectsPage() {
         </p>
 
         {isLoading ? (
-          <p className="mt-8 text-slate-300">Loading projects...</p>
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <div className="h-2 w-64 overflow-hidden rounded-full bg-slate-700">
+              <div className="h-full w-full animate-[loading-bar_1.5s_ease-in-out_infinite] bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-[length:200%_100%]" />
+            </div>
+            <p className="text-sm text-slate-300 animate-pulse">Loading projects...</p>
+          </div>
         ) : null}
 
         {hasErrorWithoutCachedData || hasErrorWithCachedData ? (
