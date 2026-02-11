@@ -55,11 +55,41 @@ function toErrorMessage(error: unknown): string {
   return "Unknown error";
 }
 
+function normalizeDateTimeToIso(value: Date | string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsedDate = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null;
+  }
+
+  return parsedDate.toISOString();
+}
+
+function getSecondsUntil(dateTimeIso: string | null, nowMs: number): number | null {
+  if (!dateTimeIso) {
+    return null;
+  }
+
+  const targetMs = Date.parse(dateTimeIso);
+
+  if (Number.isNaN(targetMs)) {
+    return null;
+  }
+
+  return Math.floor((targetMs - nowMs) / 1000);
+}
+
 export const Route = createFileRoute("/api/diagnostics/auth-session")({
   server: {
     handlers: {
       GET: async ({ request }) => {
         const requestUrl = new URL(request.url);
+        const now = new Date();
+        const nowMs = now.getTime();
         const cookieHeader = request.headers.get("cookie");
         const cookieNames = parseCookieNames(cookieHeader);
         const hasPotentialAuthCookie = cookieNames.some((name) =>
@@ -94,6 +124,11 @@ export const Route = createFileRoute("/api/diagnostics/auth-session")({
 
         let githubAccessTokenPresent = false;
         let githubAccessTokenError: string | null = null;
+        let githubAccessTokenExpiresAt: string | null = null;
+        let githubAccessTokenExpiresInSeconds: number | null = null;
+        let githubRefreshTokenExpiresAt: string | null = null;
+        let githubRefreshTokenExpiresInSeconds: number | null = null;
+        let githubRefreshTokenError: string | null = null;
 
         try {
           const tokenResult = await auth.api.getAccessToken({
@@ -105,8 +140,28 @@ export const Route = createFileRoute("/api/diagnostics/auth-session")({
             typeof tokenResult === "string"
               ? tokenResult.length > 0
               : Boolean(tokenResult?.accessToken);
+
+          const rawAccessExpiresAt =
+            typeof tokenResult === "string" ? undefined : tokenResult?.accessTokenExpiresAt;
+
+          githubAccessTokenExpiresAt = normalizeDateTimeToIso(rawAccessExpiresAt);
+          githubAccessTokenExpiresInSeconds = getSecondsUntil(githubAccessTokenExpiresAt, nowMs);
         } catch (error) {
           githubAccessTokenError = toErrorMessage(error);
+        }
+
+        try {
+          const refreshedTokenResult = await auth.api.refreshToken({
+            headers: request.headers,
+            body: { providerId: "github" },
+          });
+
+          githubRefreshTokenExpiresAt = normalizeDateTimeToIso(
+            refreshedTokenResult?.refreshTokenExpiresAt,
+          );
+          githubRefreshTokenExpiresInSeconds = getSecondsUntil(githubRefreshTokenExpiresAt, nowMs);
+        } catch (error) {
+          githubRefreshTokenError = toErrorMessage(error);
         }
 
         const hints: string[] = [];
@@ -139,6 +194,12 @@ export const Route = createFileRoute("/api/diagnostics/auth-session")({
           );
         }
 
+        if (sessionPresent && githubRefreshTokenError === "Refresh token not found") {
+          hints.push(
+            "No GitHub refresh token is stored. This can happen when your GitHub OAuth app does not issue expiring user tokens.",
+          );
+        }
+
         return json(
           {
             now: new Date().toISOString(),
@@ -162,7 +223,12 @@ export const Route = createFileRoute("/api/diagnostics/auth-session")({
               sessionExpiresAt,
               sessionError,
               githubAccessTokenPresent,
+              githubAccessTokenExpiresAt,
+              githubAccessTokenExpiresInSeconds,
               githubAccessTokenError,
+              githubRefreshTokenExpiresAt,
+              githubRefreshTokenExpiresInSeconds,
+              githubRefreshTokenError,
             },
             hints,
           },
