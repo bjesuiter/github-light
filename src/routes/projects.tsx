@@ -61,16 +61,16 @@ function ProjectsPage() {
   const [sortMode, setSortMode] = useState<"name" | "recent">("name");
 
   const projectsQuery = useQuery({
-    queryKey: ["projects", sortMode],
+    queryKey: ["projects"],
     queryFn: async (): Promise<ProjectsResponse> => {
-      const response = await fetch(`/api/projects?sort=${sortMode}`, { credentials: "include" });
+      const response = await fetch(`/api/projects`, { credentials: "include" });
       if (!response.ok) {
         throw new Error(`Failed to load projects (${response.status})`);
       }
       return (await response.json()) as ProjectsResponse;
     },
-    staleTime: 0,
-    refetchOnMount: "always",
+    staleTime: 1000 * 60 * 5,
+    refetchOnMount: false,
   });
 
   const projects = projectsQuery.data ?? null;

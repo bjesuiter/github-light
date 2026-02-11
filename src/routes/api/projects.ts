@@ -106,9 +106,6 @@ export const Route = createFileRoute("/api/projects")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const url = new URL(request.url);
-        const sortParam = url.searchParams.get("sort");
-        const sortMode = sortParam === "recent" ? "recent" : "name";
         const session = await auth.api.getSession({ headers: request.headers });
 
         if (!session) {
@@ -195,12 +192,7 @@ export const Route = createFileRoute("/api/projects")({
         const groups = Array.from(groupsByOwner.values())
           .map((group) => ({
             ...group,
-            repos: group.repos.sort((a, b) => {
-              if (sortMode === "recent") {
-                return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-              }
-              return a.name.localeCompare(b.name);
-            }),
+            repos: group.repos.sort((a, b) => a.name.localeCompare(b.name)),
           }))
           .sort((a, b) => {
             const rankDiff = getOwnerRank(a.owner) - getOwnerRank(b.owner);
