@@ -46,6 +46,7 @@ type RepoGroup = {
 };
 
 const GITHUB_API_BASE = "https://api.github.com";
+const DEV_GITHUB_TOKEN = import.meta.env.DEV ? process.env.GITHUB_DEV_TOKEN?.trim() : undefined;
 
 class GitHubApiError extends Error {
   status: number;
@@ -108,22 +109,35 @@ export const Route = createFileRoute("/api/projects")({
       GET: async ({ request }) => {
         const session = await auth.api.getSession({ headers: request.headers });
 
-        if (!session) {
-          return json({ error: "Unauthorized" }, { status: 401 });
+        let accessToken: string | undefined;
+
+        if (session) {
+          const tokenResult = await auth.api.getAccessToken({
+            headers: request.headers,
+            body: { providerId: "github" },
+          });
+
+          accessToken =
+            typeof tokenResult === "string"
+              ? tokenResult
+              : tokenResult?.accessToken;
         }
 
-        const tokenResult = await auth.api.getAccessToken({
-          headers: request.headers,
-          body: { providerId: "github" },
-        });
-
-        const accessToken =
-          typeof tokenResult === "string"
-            ? tokenResult
-            : tokenResult?.accessToken;
+        if (!accessToken && DEV_GITHUB_TOKEN) {
+          accessToken = DEV_GITHUB_TOKEN;
+        }
 
         if (!accessToken) {
-          return json({ error: "Missing GitHub access token" }, { status: 401 });
+          return json(
+            {
+              error: "Missing GitHub access token",
+              hint:
+                import.meta.env.DEV
+                  ? "Set GITHUB_DEV_TOKEN in your local .env to bypass OAuth during development."
+                  : undefined,
+            },
+            { status: 401 },
+          );
         }
 
         const userResponse = await fetch(`${GITHUB_API_BASE}/user`, {

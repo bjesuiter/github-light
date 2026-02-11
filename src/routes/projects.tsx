@@ -9,7 +9,17 @@ import { ChevronDown, ExternalLink, Lock, Globe, Star, Timer, RefreshCw } from "
 import { auth } from "@/lib/server/auth";
 
 const getCurrentSession = createServerFn({ method: "GET" }).handler(async () => {
-  return auth.api.getSession({ headers: getRequestHeaders() });
+  const session = await auth.api.getSession({ headers: getRequestHeaders() });
+
+  if (session) {
+    return session;
+  }
+
+  if (import.meta.env.DEV && process.env.GITHUB_DEV_TOKEN?.trim()) {
+    return { session: { id: "dev-token" } };
+  }
+
+  return null;
 });
 
 export const Route = createFileRoute("/projects")({
