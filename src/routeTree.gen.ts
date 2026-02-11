@@ -16,6 +16,7 @@ import { Route as ApiProjectsRouteImport } from './routes/api/projects'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
+import { Route as ApiDiagnosticsAuthSessionRouteImport } from './routes/api/diagnostics/auth-session'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.index'
 import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
@@ -57,6 +58,12 @@ const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
   path: '/demo/api/names',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDiagnosticsAuthSessionRoute =
+  ApiDiagnosticsAuthSessionRouteImport.update({
+    id: '/api/diagnostics/auth-session',
+    path: '/api/diagnostics/auth-session',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -89,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof ProjectsRoute
   '/api/projects': typeof ApiProjectsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/diagnostics/auth-session': typeof ApiDiagnosticsAuthSessionRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -103,6 +111,7 @@ export interface FileRoutesByTo {
   '/projects': typeof ProjectsRoute
   '/api/projects': typeof ApiProjectsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/diagnostics/auth-session': typeof ApiDiagnosticsAuthSessionRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -118,6 +127,7 @@ export interface FileRoutesById {
   '/projects': typeof ProjectsRoute
   '/api/projects': typeof ApiProjectsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/diagnostics/auth-session': typeof ApiDiagnosticsAuthSessionRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/api/projects'
     | '/api/auth/$'
+    | '/api/diagnostics/auth-session'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/api/projects'
     | '/api/auth/$'
+    | '/api/diagnostics/auth-session'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -162,6 +174,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/api/projects'
     | '/api/auth/$'
+    | '/api/diagnostics/auth-session'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -177,6 +190,7 @@ export interface RootRouteChildren {
   ProjectsRoute: typeof ProjectsRoute
   ApiProjectsRoute: typeof ApiProjectsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiDiagnosticsAuthSessionRoute: typeof ApiDiagnosticsAuthSessionRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
   DemoStartServerFuncsRoute: typeof DemoStartServerFuncsRoute
@@ -237,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoApiNamesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/diagnostics/auth-session': {
+      id: '/api/diagnostics/auth-session'
+      path: '/api/diagnostics/auth-session'
+      fullPath: '/api/diagnostics/auth-session'
+      preLoaderRoute: typeof ApiDiagnosticsAuthSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -281,6 +302,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProjectsRoute: ProjectsRoute,
   ApiProjectsRoute: ApiProjectsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiDiagnosticsAuthSessionRoute: ApiDiagnosticsAuthSessionRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoStartApiRequestRoute: DemoStartApiRequestRoute,
   DemoStartServerFuncsRoute: DemoStartServerFuncsRoute,
