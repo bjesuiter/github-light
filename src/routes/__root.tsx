@@ -6,12 +6,12 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import { useEffect, useState } from 'react'
+import { formatDistance } from 'date-fns'
 
 import appCss from '../styles.css?url'
 
 const PERSISTED_QUERY_MAX_AGE_MS = 1000 * 60 * 60 * 24
-const MILLISECONDS_PER_HOUR = 1000 * 60 * 60
-const REFRESH_DEPLOY_RELATIVE_TIME_MS = 1000 * 60
+const REFRESH_DEPLOY_RELATIVE_TIME_MS = 1000
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,15 +37,15 @@ function formatRelativeDeployTime(deployedAtIso: string, nowMs: number) {
     return 'unknown'
   }
 
-  const deployedAtMs = Date.parse(deployedAtIso)
+  const deployedAtDate = new Date(deployedAtIso)
 
-  if (Number.isNaN(deployedAtMs)) {
+  if (Number.isNaN(deployedAtDate.getTime())) {
     return 'unknown'
   }
 
-  const hoursAgo = Math.max(0, Math.floor((nowMs - deployedAtMs) / MILLISECONDS_PER_HOUR))
-
-  return `${hoursAgo} hour${hoursAgo === 1 ? '' : 's'} ago`
+  return formatDistance(deployedAtDate, nowMs, {
+    addSuffix: true,
+  })
 }
 
 export const Route = createRootRoute({
