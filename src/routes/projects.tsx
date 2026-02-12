@@ -4,7 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
-import { ChevronDown, ExternalLink, Lock, Globe, Star, Timer, RefreshCw } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, ChevronDown, Clock3, ExternalLink, Lock, Globe, Star, Timer, RefreshCw } from "lucide-react";
 import { z } from "zod";
 
 import { auth } from "@/lib/server/auth";
@@ -75,13 +75,17 @@ type FlattenedRepo = Repo & {
   ownerType: RepoGroup["owner"]["type"];
 };
 
+type SortMode = "name" | "recent";
+type NameSortDirection = "asc" | "desc";
+
 function ProjectsPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [groupByOwner, setGroupByOwner] = useState(true);
-  const [sortMode, setSortMode] = useState<"name" | "recent">("name");
+  const [sortMode, setSortMode] = useState<SortMode>("name");
+  const [nameSortDirection, setNameSortDirection] = useState<NameSortDirection>("asc");
 
   const isFilterPanelOpen = search.filters === "open";
 
@@ -127,6 +131,20 @@ function ProjectsPage() {
     void projectsQuery.refetch();
   };
 
+  const handleSortModeChange = (nextMode: SortMode) => {
+    if (nextMode === "name") {
+      if (sortMode === "name") {
+        setNameSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+        return;
+      }
+
+      setSortMode("name");
+      return;
+    }
+
+    setSortMode("recent");
+  };
+
   const filteredGroups = useMemo(() => {
     const lowerQuery = query.trim().toLowerCase();
     const groups = projects?.groups ?? [];
@@ -153,15 +171,18 @@ function ProjectsPage() {
           ...group,
           repos: repos
             .slice()
-            .sort((a, b) =>
-              sortMode === "recent"
-                ? new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-                : a.name.localeCompare(b.name),
-            ),
+            .sort((a, b) => {
+              if (sortMode === "recent") {
+                return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+              }
+
+              const comparedName = a.name.localeCompare(b.name);
+              return nameSortDirection === "asc" ? comparedName : -comparedName;
+            }),
         };
       })
       .filter((group) => group.repos.length > 0);
-  }, [projects, query, showArchived, sortMode]);
+  }, [projects, query, showArchived, sortMode, nameSortDirection]);
 
   const filteredRepos = useMemo<FlattenedRepo[]>(() => {
     const repos = filteredGroups.flatMap((group) =>
@@ -172,12 +193,15 @@ function ProjectsPage() {
       })),
     );
 
-    return repos.sort((a, b) =>
-      sortMode === "recent"
-        ? new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-        : a.name.localeCompare(b.name),
-    );
-  }, [filteredGroups, sortMode]);
+    return repos.sort((a, b) => {
+      if (sortMode === "recent") {
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      }
+
+      const comparedName = a.name.localeCompare(b.name);
+      return nameSortDirection === "asc" ? comparedName : -comparedName;
+    });
+  }, [filteredGroups, sortMode, nameSortDirection]);
 
   const pageBackgroundClass = import.meta.env.DEV
     ? "[background-image:repeating-linear-gradient(135deg,rgba(250,204,21,0.045)_0px,rgba(250,204,21,0.045)_10px,transparent_10px,transparent_34px),linear-gradient(to_bottom,#0f172a,#0f172a,#1e293b)]"
@@ -228,22 +252,13 @@ function ProjectsPage() {
                     {isRefreshing ? "Refreshing..." : "Refresh now"}
                   </button>
 
-                  <label className="inline-flex items-center justify-between gap-2 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200">
-                    Sort by
-                    <span className="relative inline-flex items-center">
-                      <select
-                        value={sortMode}
-                        onChange={(event) =>
-                          setSortMode(event.target.value === "recent" ? "recent" : "name")
-                        }
-                        className="appearance-none rounded-lg border border-slate-500/70 bg-slate-900/80 py-1 pl-3 pr-8 text-sm text-slate-100 shadow-inner outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-500/20"
-                      >
-                        <option value="name">Name (A-Z)</option>
-                        <option value="recent">Recently used</option>
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute right-2 h-3.5 w-3.5 text-slate-400" />
-                    </span>
-                  </label>
+                  <div className="sm:col-span-2 lg:col-span-4">
+                    <SortByPills
+                      sortMode={sortMode}
+                      nameSortDirection={nameSortDirection}
+                      onChange={handleSortModeChange}
+                    />
+                  </div>
 
                   <label className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200">
                     <input
@@ -379,6 +394,58 @@ function ProjectsPage() {
         </footer>
       </div>
     </div>
+  );
+}
+
+function SortByPills({
+  sortMode,
+  nameSortDirection,
+  onChange,
+}: {
+  sortMode: SortMode;
+  nameSortDirection: NameSortDirection;
+  onChange: (mode: SortMode) => void;
+}) {
+  const isNameActive = sortMode === "name";
+  const isRecentActive = sortMode === "recent";
+  const NameDirectionIcon = nameSortDirection === "asc" ? ArrowUpAZ : ArrowDownAZ;
+
+  return (
+    <section className="rounded-xl border border-cyan-500/30 bg-gradient-to-br from-slate-900 via-cyan-950/20 to-indigo-950/30 p-3">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-cyan-200">Sort by</p>
+        <p className="text-xs text-cyan-100/70">(Click Name again to toggle A-Z / Z-A)</p>
+      </div>
+      <div className="mt-2 inline-flex w-full rounded-xl bg-slate-950/60 p-1">
+        <button
+          type="button"
+          onClick={() => onChange("name")}
+          aria-pressed={isNameActive}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+            isNameActive
+              ? "bg-cyan-500/20 text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.25)]"
+              : "text-slate-300 hover:bg-slate-800/60"
+          }`}
+        >
+          <NameDirectionIcon className="h-4 w-4" aria-hidden="true" />
+          <span>Name ({nameSortDirection === "asc" ? "A-Z" : "Z-A"})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onChange("recent")}
+          aria-pressed={isRecentActive}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+            isRecentActive
+              ? "bg-cyan-500/20 text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.25)]"
+              : "text-slate-300 hover:bg-slate-800/60"
+          }`}
+        >
+          <Clock3 className="h-4 w-4" aria-hidden="true" />
+          <span>Recently used</span>
+        </button>
+      </div>
+    </section>
   );
 }
 
