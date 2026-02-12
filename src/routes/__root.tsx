@@ -107,26 +107,31 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             },
           }}
         >
-          <AuthControls />
           <div className="pb-16">{children}</div>
           <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-800 bg-slate-950/95 px-4 py-3 text-xs text-slate-400 backdrop-blur">
-            <div className="mx-auto w-full text-center [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
-              <p>
-                Deploy Time:{' '}
-                <time
-                  dateTime={deployedAt}
-                  className="font-mono"
-                  suppressHydrationWarning
-                  title={deployedAt === 'unknown' ? undefined : `${deployedAt} (UTC)`}
-                >
-                  {relativeDeployTime === 'unknown'
-                    ? 'unknown'
-                    : `last deployed: ${relativeDeployTime}`}
-                </time>
-              </p>
-              <p>
-                Commit hash: <span className="font-mono">{buildCommitHash}</span>
-              </p>
+            <div className="mx-auto grid w-full grid-cols-[auto_1fr_auto] items-center gap-4">
+              <div className="justify-self-start">
+                <AuthControls />
+              </div>
+              <div className="text-center [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+                <p>
+                  Deploy Time:{' '}
+                  <time
+                    dateTime={deployedAt}
+                    className="font-mono"
+                    suppressHydrationWarning
+                    title={deployedAt === 'unknown' ? undefined : `${deployedAt} (UTC)`}
+                  >
+                    {relativeDeployTime === 'unknown'
+                      ? 'unknown'
+                      : `last deployed: ${relativeDeployTime}`}
+                  </time>
+                </p>
+                <p>
+                  Commit hash: <span className="font-mono">{buildCommitHash}</span>
+                </p>
+              </div>
+              <div className="w-14" aria-hidden="true" />
             </div>
           </footer>
           {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
@@ -183,7 +188,7 @@ function AuthControls() {
           setIsLoggedIn(true)
         }
       } catch {
-        // Keep logout button hidden when session lookup fails.
+        // Keep logout link hidden when session lookup fails.
       }
     }
 
@@ -219,15 +224,16 @@ function AuthControls() {
   }
 
   return (
-    <div className="fixed right-4 top-4 z-50">
-      <button
-        type="button"
-        onClick={handleLogout}
-        disabled={isLoggingOut}
-        className="rounded-md border border-slate-700 bg-slate-900/95 px-3 py-2 text-sm text-slate-100 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        {isLoggingOut ? 'Logging out...' : 'Logout'}
-      </button>
-    </div>
+    <a
+      href="/login"
+      onClick={(event) => {
+        event.preventDefault()
+        void handleLogout()
+      }}
+      aria-disabled={isLoggingOut}
+      className={`text-slate-400 hover:text-slate-200 ${isLoggingOut ? 'pointer-events-none opacity-70' : ''}`}
+    >
+      {isLoggingOut ? 'Logging out...' : 'Logout'}
+    </a>
   )
 }
