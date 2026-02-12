@@ -5,6 +5,7 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { ChevronDown, ExternalLink, Lock, Globe, Star, Timer, RefreshCw } from "lucide-react";
+import { z } from "zod";
 
 import { auth } from "@/lib/server/auth";
 
@@ -22,7 +23,17 @@ const getCurrentSession = createServerFn({ method: "GET" }).handler(async () => 
   return null;
 });
 
+const projectsSearchSchema = z.object({
+  filters: z.enum(["open"]).optional(),
+});
+
+type ProjectsSearch = z.infer<typeof projectsSearchSchema>;
+
 export const Route = createFileRoute("/projects")({
+  validateSearch: (search): ProjectsSearch => {
+    const parsed = projectsSearchSchema.safeParse(search);
+    return parsed.success ? parsed.data : {};
+  },
   beforeLoad: async () => {
     const session = await getCurrentSession();
     if (!session) {
@@ -65,10 +76,31 @@ type FlattenedRepo = Repo & {
 };
 
 function ProjectsPage() {
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [groupByOwner, setGroupByOwner] = useState(true);
   const [sortMode, setSortMode] = useState<"name" | "recent">("name");
+
+  const isFilterPanelOpen = search.filters === "open";
+
+  const setFilterPanelOpen = (nextOpen: boolean) => {
+    void navigate({
+      search: (prev) => {
+        if (nextOpen) {
+          return {
+            ...prev,
+            filters: "open",
+          };
+        }
+
+        const { filters: _filters, ...rest } = prev;
+        return rest;
+      },
+      replace: true,
+    });
+  };
 
   const projectsQuery = useQuery({
     queryKey: ["projects"],
@@ -164,8 +196,17 @@ function ProjectsPage() {
               className="w-full rounded-2xl border border-slate-500/70 bg-transparent px-5 py-3 text-center text-slate-50 placeholder:text-slate-400 outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-500/25"
             />
 
-            <details className="group mt-3 overflow-hidden rounded-xl border border-slate-600/70 bg-slate-800/35">
-              <summary className="flex cursor-pointer list-none items-center justify-center px-3 py-2.5 text-center marker:content-none hover:bg-slate-700/25">
+            <details
+              open={isFilterPanelOpen}
+              className="group mt-3 overflow-hidden rounded-xl border border-slate-600/70 bg-slate-800/35"
+            >
+              <summary
+                onClick={(event) => {
+                  event.preventDefault();
+                  setFilterPanelOpen(!isFilterPanelOpen);
+                }}
+                className="flex cursor-pointer list-none items-center justify-center px-3 py-2.5 text-center marker:content-none hover:bg-slate-700/25"
+              >
                 <span className="inline-flex flex-col items-center gap-1 text-xs font-medium tracking-wide text-slate-300">
                   <span>Search/Filter</span>
                   <ChevronDown
