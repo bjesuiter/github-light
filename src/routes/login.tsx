@@ -51,8 +51,12 @@ function LoginPage() {
     }
   };
 
+  const pageBackgroundClass = import.meta.env.DEV
+    ? "[background-image:repeating-linear-gradient(135deg,rgba(250,204,21,0.045)_0px,rgba(250,204,21,0.045)_10px,transparent_10px,transparent_34px),linear-gradient(to_bottom,#020617,#020617)]"
+    : "bg-slate-950";
+
   return (
-    <div className="min-h-[calc(100dvh-4rem)] bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+    <div className={`min-h-[calc(100dvh-4rem)] text-slate-100 flex items-center justify-center p-6 ${pageBackgroundClass}`}>
       <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
         <h1 className="text-2xl font-semibold tracking-tight">GitHub Light</h1>
         <p className="mt-2 text-slate-300">

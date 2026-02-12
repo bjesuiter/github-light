@@ -147,8 +147,12 @@ function ProjectsPage() {
     );
   }, [filteredGroups, sortMode]);
 
+  const pageBackgroundClass = import.meta.env.DEV
+    ? "[background-image:repeating-linear-gradient(135deg,rgba(250,204,21,0.045)_0px,rgba(250,204,21,0.045)_10px,transparent_10px,transparent_34px),linear-gradient(to_bottom,#0f172a,#0f172a,#1e293b)]"
+    : "bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800";
+
   return (
-    <div className="min-h-[calc(100dvh-4rem)] bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 px-4 py-6 text-slate-100 sm:px-6">
+    <div className={`min-h-[calc(100dvh-4rem)] px-4 py-6 text-slate-100 sm:px-6 ${pageBackgroundClass}`}>
       <div className="mx-auto max-w-6xl">
         <div className="rounded-3xl border border-slate-700/60 bg-slate-900/35 p-5 shadow-lg shadow-slate-950/20 backdrop-blur-sm sm:p-6">
           <div className="mx-auto max-w-3xl">

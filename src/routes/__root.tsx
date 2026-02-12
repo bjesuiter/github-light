@@ -87,13 +87,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   }, [])
 
   const relativeDeployTime = formatRelativeDeployTime(deployedAt, nowMs)
+  const bodyClassName = import.meta.env.DEV
+    ? 'bg-slate-950 text-slate-100 [background-image:repeating-linear-gradient(135deg,rgba(250,204,21,0.04)_0px,rgba(250,204,21,0.04)_10px,transparent_10px,transparent_34px)]'
+    : 'bg-slate-950 text-slate-100'
 
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
-      <body className="bg-slate-950 text-slate-100">
+      <body className={bodyClassName}>
         <PersistQueryClientProvider
           client={queryClient}
           persistOptions={{
