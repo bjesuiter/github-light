@@ -25,6 +25,8 @@ const getCurrentSession = createServerFn({ method: "GET" }).handler(async () => 
 
 const projectsSearchSchema = z.object({
   filters: z.enum(["open"]).optional(),
+  showArchived: z.enum(["true", "false"]).optional(),
+  groupByOwner: z.enum(["true", "false"]).optional(),
 });
 
 type ProjectsSearch = z.infer<typeof projectsSearchSchema>;
@@ -82,12 +84,12 @@ function ProjectsPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const [query, setQuery] = useState("");
-  const [showArchived, setShowArchived] = useState(false);
-  const [groupByOwner, setGroupByOwner] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>("name");
   const [nameSortDirection, setNameSortDirection] = useState<NameSortDirection>("asc");
 
   const isFilterPanelOpen = search.filters === "open";
+  const showArchived = search.showArchived === "true";
+  const groupByOwner = search.groupByOwner !== "false";
 
   const setFilterPanelOpen = (nextOpen: boolean) => {
     void navigate({
@@ -102,6 +104,26 @@ function ProjectsPage() {
         const { filters: _filters, ...rest } = prev;
         return rest;
       },
+      replace: true,
+    });
+  };
+
+  const setShowArchivedInSearch = (nextShowArchived: boolean) => {
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        showArchived: nextShowArchived ? "true" : undefined,
+      }),
+      replace: true,
+    });
+  };
+
+  const setGroupByOwnerInSearch = (nextGroupByOwner: boolean) => {
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        groupByOwner: nextGroupByOwner ? undefined : "false",
+      }),
       replace: true,
     });
   };
@@ -241,44 +263,42 @@ function ProjectsPage() {
               </summary>
 
               <div className="border-t border-slate-700/70 p-3 sm:p-4">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <button
-                    type="button"
-                    onClick={handleManualRefresh}
-                    disabled={isRefreshing}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-100 transition hover:bg-slate-700/80 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-                    {isRefreshing ? "Refreshing..." : "Refresh now"}
-                  </button>
+                <SortByPills
+                  sortMode={sortMode}
+                  nameSortDirection={nameSortDirection}
+                  onChange={handleSortModeChange}
+                />
 
-                  <div className="sm:col-span-2 lg:col-span-4">
-                    <SortByPills
-                      sortMode={sortMode}
-                      nameSortDirection={nameSortDirection}
-                      onChange={handleSortModeChange}
-                    />
-                  </div>
-
-                  <label className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200">
+                <div className="mt-3 flex flex-wrap items-center gap-3 sm:flex-nowrap">
+                  <label className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 whitespace-nowrap">
                     <input
                       type="checkbox"
                       checked={showArchived}
-                      onChange={(event) => setShowArchived(event.target.checked)}
+                      onChange={(event) => setShowArchivedInSearch(event.target.checked)}
                       className="h-4 w-4 rounded border-slate-500 bg-slate-900"
                     />
                     Show archived
                   </label>
 
-                  <label className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200">
+                  <label className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 whitespace-nowrap">
                     <input
                       type="checkbox"
                       checked={groupByOwner}
-                      onChange={(event) => setGroupByOwner(event.target.checked)}
+                      onChange={(event) => setGroupByOwnerInSearch(event.target.checked)}
                       className="h-4 w-4 rounded border-slate-500 bg-slate-900"
                     />
                     Group by owner
                   </label>
+
+                  <button
+                    type="button"
+                    onClick={handleManualRefresh}
+                    disabled={isRefreshing}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2 text-sm text-slate-100 transition hover:bg-slate-700/80 disabled:cursor-not-allowed disabled:opacity-60 sm:ml-auto"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                    {isRefreshing ? "Refreshing..." : "Refresh now"}
+                  </button>
                 </div>
               </div>
             </details>
@@ -411,19 +431,19 @@ function SortByPills({
   const NameDirectionIcon = nameSortDirection === "asc" ? ArrowUpAZ : ArrowDownAZ;
 
   return (
-    <section className="rounded-xl border border-cyan-500/30 bg-gradient-to-br from-slate-900 via-cyan-950/20 to-indigo-950/30 p-3">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+    <section>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-1">
         <p className="text-xs font-medium uppercase tracking-[0.14em] text-cyan-200">Sort by</p>
         <p className="text-xs text-cyan-100/70">(Click Name again to toggle A-Z / Z-A)</p>
       </div>
-      <div className="mt-2 inline-flex w-full rounded-xl bg-slate-950/60 p-1">
+      <div className="mt-2 flex w-full rounded-xl bg-slate-950/60 p-1">
         <button
           type="button"
           onClick={() => onChange("name")}
           aria-pressed={isNameActive}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+          className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-3 py-2 text-sm transition ${
             isNameActive
-              ? "bg-cyan-500/20 text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.25)]"
+              ? "border-cyan-300/45 bg-cyan-400/20 text-cyan-50 shadow-[0_0_10px_rgba(34,211,238,0.24)]"
               : "text-slate-300 hover:bg-slate-800/60"
           }`}
         >
@@ -435,9 +455,9 @@ function SortByPills({
           type="button"
           onClick={() => onChange("recent")}
           aria-pressed={isRecentActive}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+          className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-3 py-2 text-sm transition ${
             isRecentActive
-              ? "bg-cyan-500/20 text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.25)]"
+              ? "border-cyan-300/45 bg-cyan-400/20 text-cyan-50 shadow-[0_0_10px_rgba(34,211,238,0.24)]"
               : "text-slate-300 hover:bg-slate-800/60"
           }`}
         >
