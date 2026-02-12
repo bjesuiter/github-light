@@ -1,86 +1,45 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 
 import {
   createDefaultNewRepoDraft,
-  newRepoWizardSteps,
   normalizeRepoName,
   validateWizardStep,
   type NewRepoDraft,
-  type NewRepoWizardStep,
 } from "../lib/new-repo-wizard";
 
 type NewRepoWizardProps = {
   onCreateRepository?: (draft: NewRepoDraft) => Promise<{ htmlUrl?: string; fullName?: string }>;
 };
 
-const stepLabels: Record<NewRepoWizardStep, string> = {
-  details: "Details",
-  access: "Owner & Visibility",
-  initialize: "Initialize",
-  review: "Review",
-};
-
-const stepDescriptions: Record<NewRepoWizardStep, string> = {
-  details: "Choose repository name and description.",
-  access: "Select owner and visibility settings.",
-  initialize: "Pick optional repository initialization templates.",
-  review: "Review choices before creating the repository.",
-};
-
 export function NewRepoWizard({ onCreateRepository }: NewRepoWizardProps) {
   const [draft, setDraft] = useState<NewRepoDraft>(() => createDefaultNewRepoDraft());
-  const [stepIndex, setStepIndex] = useState(0);
-  const [stepErrors, setStepErrors] = useState<Array<string>>([]);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
 
-  const step = newRepoWizardSteps[stepIndex] as NewRepoWizardStep;
-  const isFinalStep = step === "review";
+  const detailsErrors = useMemo(() => validateWizardStep("details", draft), [draft]);
+  const accessErrors = useMemo(() => validateWizardStep("access", draft), [draft]);
+  const initializeErrors = useMemo(() => validateWizardStep("initialize", draft), [draft]);
 
-  const stepTitle = stepLabels[step];
-  const stepDescription = stepDescriptions[step];
-  const progressPercent = useMemo(() => ((stepIndex + 1) / newRepoWizardSteps.length) * 100, [stepIndex]);
-
-  useEffect(() => {
-    stepHeadingRef.current?.focus();
-  }, [stepIndex]);
-
-  const validateCurrentStep = (): boolean => {
-    const errors = validateWizardStep(step, draft);
-    setStepErrors(errors);
-    return errors.length === 0;
-  };
-
-  const goNext = () => {
-    if (!validateCurrentStep()) {
-      return;
-    }
-
-    setStepErrors([]);
-    setStepIndex((current) => Math.min(current + 1, newRepoWizardSteps.length - 1));
-  };
-
-  const goBack = () => {
-    setStepErrors([]);
-    setStepIndex((current) => Math.max(current - 1, 0));
-  };
+  const hasAnySectionErrors = detailsErrors.length > 0 || accessErrors.length > 0 || initializeErrors.length > 0;
 
   const handleCreateRepository = async () => {
-    if (!validateCurrentStep()) {
+    setHasAttemptedSubmit(true);
+    setSubmitSuccess(null);
+
+    if (hasAnySectionErrors) {
+      setSubmitError("Please fix validation errors in the sections above before creating the repository.");
       return;
     }
 
     if (!onCreateRepository) {
-      setSubmitSuccess(null);
       setSubmitError("Submit action is not wired yet. This page shell is ready for backend wiring.");
       return;
     }
 
     setIsSubmitting(true);
     setSubmitError(null);
-    setSubmitSuccess(null);
 
     try {
       const result = await onCreateRepository({
@@ -99,80 +58,49 @@ export function NewRepoWizard({ onCreateRepository }: NewRepoWizardProps) {
 
   return (
     <div className="mx-auto max-w-3xl rounded-2xl border border-slate-700/70 bg-slate-900/60 p-5 shadow-lg shadow-slate-950/35 sm:p-7">
-      <header className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">New Repo Wizard</p>
-          <p className="text-sm text-slate-300">
-            Step {stepIndex + 1} of {newRepoWizardSteps.length}
-          </p>
-        </div>
-
-        <div className="h-2 overflow-hidden rounded-full bg-slate-800" aria-hidden="true">
-          <div
-            className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 transition-all duration-300"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-
-        <ol className="grid gap-2 text-xs text-slate-300 sm:grid-cols-4">
-          {newRepoWizardSteps.map((entryStep, index) => {
-            const isActive = index === stepIndex;
-            const isComplete = index < stepIndex;
-
-            return (
-              <li
-                key={entryStep}
-                className={`rounded-lg border px-2 py-1.5 text-center ${
-                  isActive
-                    ? "border-cyan-400/70 bg-cyan-500/10 text-cyan-100"
-                    : isComplete
-                      ? "border-emerald-500/50 bg-emerald-600/10 text-emerald-100"
-                      : "border-slate-700 bg-slate-800/70"
-                }`}
-              >
-                {stepLabels[entryStep]}
-              </li>
-            );
-          })}
-        </ol>
+      <header>
+        <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">New Repo</p>
+        <h2 className="mt-1 text-xl font-semibold text-slate-100">Complete all sections and create your repository</h2>
+        <p className="mt-1 text-sm text-slate-300">
+          Fill the form from top to bottom. No stepper clicks required.
+        </p>
       </header>
 
-      <section className="mt-6 rounded-xl border border-slate-700/80 bg-slate-900/70 p-4 sm:p-5">
-        <h2 ref={stepHeadingRef} tabIndex={-1} className="text-lg font-semibold text-slate-100 outline-none">
-          {stepTitle}
-        </h2>
-        <p className="mt-1 text-sm text-slate-300">{stepDescription}</p>
+      <div className="mt-6 space-y-5">
+        <WizardSection title="1. Details" description="Choose repository name and description.">
+          <DetailsStep draft={draft} setDraft={setDraft} />
+          {hasAttemptedSubmit ? <SectionErrors errors={detailsErrors} /> : null}
+        </WizardSection>
 
-        <div className="mt-5 space-y-4">
-          {step === "details" ? <DetailsStep draft={draft} setDraft={setDraft} /> : null}
-          {step === "access" ? <AccessStep draft={draft} setDraft={setDraft} /> : null}
-          {step === "initialize" ? <InitializeStep draft={draft} setDraft={setDraft} /> : null}
-          {step === "review" ? <ReviewStep draft={draft} /> : null}
-        </div>
+        <WizardSection title="2. Owner & Visibility" description="Select owner and visibility settings.">
+          <AccessStep draft={draft} setDraft={setDraft} />
+          {hasAttemptedSubmit ? <SectionErrors errors={accessErrors} /> : null}
+        </WizardSection>
 
-        {stepErrors.length ? (
-          <div className="mt-5 rounded-lg border border-rose-700/70 bg-rose-950/40 p-3 text-sm text-rose-200" role="alert">
-            <p className="font-medium">Please fix the following before continuing:</p>
-            <ul className="mt-2 list-disc space-y-1 pl-5">
-              {stepErrors.map((error) => (
-                <li key={error}>{error}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+        <WizardSection
+          title="3. Initialize"
+          description="Pick optional repository initialization templates for the first commit."
+        >
+          <InitializeStep draft={draft} setDraft={setDraft} />
+          {hasAttemptedSubmit ? <SectionErrors errors={initializeErrors} /> : null}
+        </WizardSection>
 
-        {submitError ? (
-          <p className="mt-5 rounded-lg border border-rose-700/70 bg-rose-950/35 p-3 text-sm text-rose-200" role="alert">
-            {submitError}
-          </p>
-        ) : null}
+        <WizardSection title="4. Review" description="Review all values before creating the repository.">
+          <ReviewStep draft={draft} />
+        </WizardSection>
+      </div>
 
-        {submitSuccess ? (
-          <p className="mt-5 rounded-lg border border-emerald-700/70 bg-emerald-950/35 p-3 text-sm text-emerald-200">
-            {submitSuccess}
-          </p>
-        ) : null}
-      </section>
+      {submitError ? (
+        <p className="mt-5 rounded-lg border border-rose-700/70 bg-rose-950/35 p-3 text-sm text-rose-200" role="alert">
+          {submitError}
+        </p>
+      ) : null}
+
+      {submitSuccess ? (
+        <p className="mt-5 rounded-lg border border-emerald-700/70 bg-emerald-950/35 p-3 text-sm text-emerald-200">
+          {submitSuccess}
+        </p>
+      ) : null}
 
       <footer className="mt-5 flex flex-wrap items-center gap-2 sm:justify-between">
         <a
@@ -182,36 +110,50 @@ export function NewRepoWizard({ onCreateRepository }: NewRepoWizardProps) {
           Cancel
         </a>
 
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={goBack}
-            disabled={stepIndex === 0 || isSubmitting}
-            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Back
-          </button>
-
-          {isFinalStep ? (
-            <button
-              type="button"
-              onClick={handleCreateRepository}
-              disabled={isSubmitting}
-              className="rounded-lg border border-cyan-500/60 bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/30 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isSubmitting ? "Creating..." : "Create repository"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={goNext}
-              className="rounded-lg border border-cyan-500/60 bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/30"
-            >
-              Next
-            </button>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={handleCreateRepository}
+          disabled={isSubmitting}
+          className="ml-auto rounded-lg border border-cyan-500/60 bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/30 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {isSubmitting ? "Creating..." : "Create repository"}
+        </button>
       </footer>
+    </div>
+  );
+}
+
+function WizardSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-slate-700/80 bg-slate-900/70 p-4 sm:p-5">
+      <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
+      <p className="mt-1 text-sm text-slate-300">{description}</p>
+      <div className="mt-4 space-y-4">{children}</div>
+    </section>
+  );
+}
+
+function SectionErrors({ errors }: { errors: Array<string> }) {
+  if (!errors.length) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-lg border border-rose-700/70 bg-rose-950/40 p-3 text-sm text-rose-200" role="alert">
+      <p className="font-medium">Please fix the following:</p>
+      <ul className="mt-2 list-disc space-y-1 pl-5">
+        {errors.map((error) => (
+          <li key={error}>{error}</li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -68,7 +68,7 @@ function NewRepoPage() {
         <div className="mb-5">
           <h1 className="text-2xl font-semibold tracking-tight text-slate-50">Create new repository</h1>
           <p className="mt-1.5 text-sm text-slate-300">
-            Follow the guided steps to prepare repository settings before creation.
+            Fill the sections below and scroll straight through before creating the repository.
           </p>
         </div>
 
