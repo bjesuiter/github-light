@@ -5,6 +5,9 @@
 - Use the `agent-browser` skill to run browser tests autonomously without requiring user interaction.
 - Use the `playwrighter` skill to run browser tests collaboratively with the user when explicitly requested.
 - When using `beansloop`, always use non-interactive testing.
+- For GitHub lifecycle tests, run `bun run test:github-lifecycle:preflight` before any destructive run.
+- Only run destructive repo lifecycle tests when explicitly armed (`RUN_GITHUB_LIFECYCLE_TESTS=true` and `ALLOW_GITHUB_DESTRUCTIVE_TESTS=true`).
+- IMPORTANT: NEVER delete a repository you did not create during the current test run.
 - Prod deployment is linked to this GitHub repo; to test, push the latest changes and wait for the Railway deploy to finish.
 
 ### Remote Coding Mode

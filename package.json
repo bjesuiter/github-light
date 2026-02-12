@@ -8,6 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:github-lifecycle": "vitest run src/lib/github-repo-lifecycle.test.ts",
+    "test:github-lifecycle:preflight": "bun scripts/github-lifecycle-preflight.ts",
+    "test:github-lifecycle:armed": "bun run test:github-lifecycle:preflight && RUN_GITHUB_LIFECYCLE_TESTS=true ALLOW_GITHUB_DESTRUCTIVE_TESTS=true vitest run src/lib/github-repo-lifecycle.test.ts",
     "start": "node .output/server/index.mjs"
   },
   "dependencies": {
