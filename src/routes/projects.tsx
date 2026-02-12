@@ -154,31 +154,25 @@ function ProjectsPage() {
   return (
     <div className={`min-h-[calc(100dvh-4rem)] px-4 py-6 text-slate-100 sm:px-6 ${pageBackgroundClass}`}>
       <div className="mx-auto max-w-6xl">
-        <div className="rounded-3xl border border-slate-700/60 bg-slate-900/35 p-5 shadow-lg shadow-slate-950/20 backdrop-blur-sm sm:p-6">
+        <div className="rounded-3xl p-5 sm:p-6">
           <div className="mx-auto max-w-3xl">
             <input
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search by repo or owner"
-              className="w-full rounded-2xl border border-slate-500/70 bg-slate-800/75 px-5 py-3 text-center text-slate-50 placeholder:text-slate-400 outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-500/25"
+              className="w-full rounded-2xl border border-slate-500/70 bg-transparent px-5 py-3 text-center text-slate-50 placeholder:text-slate-400 outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-500/25"
             />
 
             <details className="group mt-3 overflow-hidden rounded-xl border border-slate-600/70 bg-slate-800/35">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 marker:content-none hover:bg-slate-700/25">
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-wide text-slate-300">
+              <summary className="flex cursor-pointer list-none items-center justify-center px-3 py-2.5 text-center marker:content-none hover:bg-slate-700/25">
+                <span className="inline-flex flex-col items-center gap-1 text-xs font-medium tracking-wide text-slate-300">
+                  <span>Search/Filter</span>
                   <ChevronDown
                     className="h-3.5 w-3.5 transition-transform duration-200 group-open:rotate-180"
                     aria-hidden="true"
                   />
-                  Search/Filter
                 </span>
-                {isRefreshing ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-cyan-200">
-                    <RefreshCw className="h-3 w-3 animate-spin" aria-hidden="true" />
-                    Refreshing...
-                  </span>
-                ) : null}
               </summary>
 
               <div className="border-t border-slate-700/70 p-3 sm:p-4">
@@ -233,29 +227,6 @@ function ProjectsPage() {
               </div>
             </details>
           </div>
-
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-slate-400">
-            <p>Find repositories across all accessible owners.</p>
-            {cachedAt && !isRefreshing ? (
-              <p>
-                Showing cached data from{" "}
-                <time dateTime={cachedAt}>{new Date(cachedAt).toLocaleTimeString()}</time>.
-              </p>
-            ) : null}
-          </div>
-
-          <p className="mt-4 text-center text-sm text-slate-400">
-            Can&apos;t find your repo?{" "}
-            <a
-              href="https://github.com/settings/installations"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="underline hover:text-slate-200"
-            >
-              Check permissions here
-            </a>{" "}
-            and activate the missing user/org.
-          </p>
 
           {isLoading ? (
             <div className="mt-8 flex flex-col items-center gap-3">
@@ -341,6 +312,30 @@ function ProjectsPage() {
             </ul>
           </div>
         )}
+
+        <footer className="mt-8 border-t border-slate-800/80 pt-4 text-center text-xs text-slate-400">
+          <p>
+            Find repositories across all accessible owners.
+            {cachedAt && !isRefreshing ? (
+              <>
+                {" "}Showing cached data from{" "}
+                <time dateTime={cachedAt}>{new Date(cachedAt).toLocaleTimeString()}</time>.
+              </>
+            ) : null}
+          </p>
+          <p className="mt-1.5">
+            Can&apos;t find your repo?{" "}
+            <a
+              href="https://github.com/settings/installations"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline hover:text-slate-200"
+            >
+              Check permissions here
+            </a>{" "}
+            and activate the missing user/org.
+          </p>
+        </footer>
       </div>
     </div>
   );
