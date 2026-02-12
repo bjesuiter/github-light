@@ -17,6 +17,7 @@ import { Route as ApiProjectsRouteImport } from './routes/api/projects'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
+import { Route as ApiReposCreateRouteImport } from './routes/api/repos/create'
 import { Route as ApiDiagnosticsAuthSessionRouteImport } from './routes/api/diagnostics/auth-session'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.index'
@@ -64,6 +65,11 @@ const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
   path: '/demo/api/names',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiReposCreateRoute = ApiReposCreateRouteImport.update({
+  id: '/api/repos/create',
+  path: '/api/repos/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDiagnosticsAuthSessionRoute =
   ApiDiagnosticsAuthSessionRouteImport.update({
     id: '/api/diagnostics/auth-session',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/api/projects': typeof ApiProjectsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/diagnostics/auth-session': typeof ApiDiagnosticsAuthSessionRoute
+  '/api/repos/create': typeof ApiReposCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/api/projects': typeof ApiProjectsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/diagnostics/auth-session': typeof ApiDiagnosticsAuthSessionRoute
+  '/api/repos/create': typeof ApiReposCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/api/projects': typeof ApiProjectsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/diagnostics/auth-session': typeof ApiDiagnosticsAuthSessionRoute
+  '/api/repos/create': typeof ApiReposCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/api/projects'
     | '/api/auth/$'
     | '/api/diagnostics/auth-session'
+    | '/api/repos/create'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/api/projects'
     | '/api/auth/$'
     | '/api/diagnostics/auth-session'
+    | '/api/repos/create'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/api/projects'
     | '/api/auth/$'
     | '/api/diagnostics/auth-session'
+    | '/api/repos/create'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -204,6 +216,7 @@ export interface RootRouteChildren {
   ApiProjectsRoute: typeof ApiProjectsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiDiagnosticsAuthSessionRoute: typeof ApiDiagnosticsAuthSessionRoute
+  ApiReposCreateRoute: typeof ApiReposCreateRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
   DemoStartServerFuncsRoute: typeof DemoStartServerFuncsRoute
@@ -271,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoApiNamesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/repos/create': {
+      id: '/api/repos/create'
+      path: '/api/repos/create'
+      fullPath: '/api/repos/create'
+      preLoaderRoute: typeof ApiReposCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/diagnostics/auth-session': {
       id: '/api/diagnostics/auth-session'
       path: '/api/diagnostics/auth-session'
@@ -324,6 +344,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProjectsRoute: ApiProjectsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiDiagnosticsAuthSessionRoute: ApiDiagnosticsAuthSessionRoute,
+  ApiReposCreateRoute: ApiReposCreateRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoStartApiRequestRoute: DemoStartApiRequestRoute,
   DemoStartServerFuncsRoute: DemoStartServerFuncsRoute,

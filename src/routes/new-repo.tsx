@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 
 import { NewRepoWizard } from "@/components/NewRepoWizard";
+import { type NewRepoDraft } from "@/lib/new-repo-wizard";
 import { auth } from "@/lib/server/auth";
 
 const getCurrentSession = createServerFn({ method: "GET" }).handler(async () => {
@@ -34,6 +35,33 @@ function NewRepoPage() {
     ? "[background-image:repeating-linear-gradient(135deg,rgba(250,204,21,0.045)_0px,rgba(250,204,21,0.045)_10px,transparent_10px,transparent_34px),linear-gradient(to_bottom,#020617,#020617,#0f172a)]"
     : "bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900";
 
+  const handleCreateRepository = async (draft: NewRepoDraft) => {
+    const response = await fetch("/api/repos/create", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(draft),
+    });
+
+    const payload = (await response.json().catch(() => null)) as
+      | { repo?: { htmlUrl?: string; fullName?: string }; error?: string; hint?: string }
+      | null;
+
+    if (!response.ok) {
+      const errorMessage = payload?.error ?? "Repository creation failed.";
+      const hint = payload?.hint ? ` ${payload.hint}` : "";
+      throw new Error(`${errorMessage}${hint}`.trim());
+    }
+
+    return {
+      htmlUrl: payload?.repo?.htmlUrl,
+      fullName: payload?.repo?.fullName,
+    };
+  };
+
   return (
     <div className={`min-h-[calc(100dvh-4rem)] px-4 py-6 text-slate-100 sm:px-6 ${pageBackgroundClass}`}>
       <div className="mx-auto max-w-5xl">
@@ -44,7 +72,7 @@ function NewRepoPage() {
           </p>
         </div>
 
-        <NewRepoWizard />
+        <NewRepoWizard onCreateRepository={handleCreateRepository} />
       </div>
     </div>
   );

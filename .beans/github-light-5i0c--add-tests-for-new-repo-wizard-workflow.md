@@ -1,25 +1,25 @@
 ---
 # github-light-5i0c
 title: Add tests for New Repo wizard workflow
-status: in-progress
+status: completed
 type: task
 priority: normal
 created_at: 2026-02-09T14:17:32Z
-updated_at: 2026-02-12T01:22:33Z
+updated_at: 2026-02-12T01:32:33Z
 parent: github-light-niil
 ---
 
 Add automated test coverage for the end-to-end wizard flow and key failure cases.
 
 ## Checklist
-- [ ] Add route-level test for `New Repo` button -> wizard navigation
-- [ ] Add wizard progression tests for next/back behavior and draft state retention
-- [ ] Add validation tests for required fields per step
+- [x] Add route-level test for `New Repo` button -> wizard navigation
+- [x] Add wizard progression tests for next/back behavior and draft state retention
+- [x] Add validation tests for required fields per step
 - [x] Add submit tests for both success and failure outcomes
 - [x] Ensure tests run non-interactively in CI-compatible mode
 
 ## Verification
-- [ ] Test suite covers happy path and major validation/error paths
+- [x] Test suite covers happy path and major validation/error paths
 - [x] All new tests pass reliably in non-interactive runs
 
 ## Progress Notes
@@ -33,3 +33,9 @@ Add automated test coverage for the end-to-end wizard flow and key failure cases
 - Added AGENTS.md testing guardrails for lifecycle tests, including mandatory preflight and explicit rule: never delete repos not created in the current test run.
 
 - Re-ran armed lifecycle test after permission update: preflight passed and full create -> verify -> delete test passed successfully.
+
+## Summary of Changes
+- Added `NewRepoEntryButton` test ensuring the Projects page entry point targets `/new-repo`.
+- Added `NewRepoWizard` tests for step progression, back/next draft retention, required-field validation feedback, submit success, and submit failure/retry.
+- Kept lifecycle integration tests non-interactive and guarded, with successful armed run after token permission updates.
+- Confirmed test suite and build pass in CI-compatible non-interactive mode.
