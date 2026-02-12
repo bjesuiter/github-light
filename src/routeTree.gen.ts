@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProjectsRouteImport } from './routes/projects'
+import { Route as NewRepoRouteImport } from './routes/new-repo'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiProjectsRouteImport } from './routes/api/projects'
@@ -26,6 +27,11 @@ import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ss
 const ProjectsRoute = ProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewRepoRoute = NewRepoRouteImport.update({
+  id: '/new-repo',
+  path: '/new-repo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -93,6 +99,7 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/new-repo': typeof NewRepoRoute
   '/projects': typeof ProjectsRoute
   '/api/projects': typeof ApiProjectsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/new-repo': typeof NewRepoRoute
   '/projects': typeof ProjectsRoute
   '/api/projects': typeof ApiProjectsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/new-repo': typeof NewRepoRoute
   '/projects': typeof ProjectsRoute
   '/api/projects': typeof ApiProjectsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/new-repo'
     | '/projects'
     | '/api/projects'
     | '/api/auth/$'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/new-repo'
     | '/projects'
     | '/api/projects'
     | '/api/auth/$'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/new-repo'
     | '/projects'
     | '/api/projects'
     | '/api/auth/$'
@@ -187,6 +199,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  NewRepoRoute: typeof NewRepoRoute
   ProjectsRoute: typeof ProjectsRoute
   ApiProjectsRoute: typeof ApiProjectsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -207,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof ProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/new-repo': {
+      id: '/new-repo'
+      path: '/new-repo'
+      fullPath: '/new-repo'
+      preLoaderRoute: typeof NewRepoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -299,6 +319,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  NewRepoRoute: NewRepoRoute,
   ProjectsRoute: ProjectsRoute,
   ApiProjectsRoute: ApiProjectsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
