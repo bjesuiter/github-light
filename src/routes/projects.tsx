@@ -6,6 +6,7 @@ import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { ArrowDownAZ, ArrowUpAZ, ChevronDown, Clock3, ExternalLink, Lock, Globe, Star, Timer, RefreshCw } from "lucide-react";
 
+import { NewRepoEntryButton } from "@/components/NewRepoEntryButton";
 import { getProjectsQuery, projectsSearchSchema, withProjectsQuery, type ProjectsSearch } from "@/lib/projects-search";
 import { auth } from "@/lib/server/auth";
 
@@ -233,6 +234,11 @@ function ProjectsPage() {
       <div className="mx-auto max-w-6xl">
         <div className="rounded-3xl p-5 sm:p-6">
           <div className="mx-auto max-w-3xl">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <h1 className="text-lg font-semibold text-slate-100 sm:text-xl">Projects</h1>
+              <NewRepoEntryButton />
+            </div>
+
             <input
               type="search"
               value={query}
