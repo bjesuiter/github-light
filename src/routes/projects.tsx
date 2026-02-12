@@ -5,8 +5,8 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { ArrowDownAZ, ArrowUpAZ, ChevronDown, Clock3, ExternalLink, Lock, Globe, Star, Timer, RefreshCw } from "lucide-react";
-import { z } from "zod";
 
+import { getProjectsQuery, projectsSearchSchema, withProjectsQuery, type ProjectsSearch } from "@/lib/projects-search";
 import { auth } from "@/lib/server/auth";
 
 const getCurrentSession = createServerFn({ method: "GET" }).handler(async () => {
@@ -22,14 +22,6 @@ const getCurrentSession = createServerFn({ method: "GET" }).handler(async () => 
 
   return null;
 });
-
-const projectsSearchSchema = z.object({
-  filters: z.enum(["open"]).optional(),
-  showArchived: z.enum(["true", "false"]).optional(),
-  groupByOwner: z.enum(["true", "false"]).optional(),
-});
-
-type ProjectsSearch = z.infer<typeof projectsSearchSchema>;
 
 export const Route = createFileRoute("/projects")({
   validateSearch: (search): ProjectsSearch => {
@@ -83,7 +75,7 @@ type NameSortDirection = "asc" | "desc";
 function ProjectsPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const [query, setQuery] = useState("");
+  const query = getProjectsQuery(search);
   const [sortMode, setSortMode] = useState<SortMode>("name");
   const [nameSortDirection, setNameSortDirection] = useState<NameSortDirection>("asc");
 
@@ -124,6 +116,13 @@ function ProjectsPage() {
         ...prev,
         groupByOwner: nextGroupByOwner ? undefined : "false",
       }),
+      replace: true,
+    });
+  };
+
+  const setQueryInSearch = (nextQuery: string) => {
+    void navigate({
+      search: (prev) => withProjectsQuery(prev, nextQuery),
       replace: true,
     });
   };
@@ -237,7 +236,7 @@ function ProjectsPage() {
             <input
               type="search"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => setQueryInSearch(event.target.value)}
               placeholder="Search by repo or owner"
               className="w-full rounded-2xl border border-slate-500/70 bg-transparent px-5 py-3 text-center text-slate-50 placeholder:text-slate-400 outline-none transition focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-500/25"
             />
