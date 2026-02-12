@@ -8,6 +8,12 @@ import { ArrowDownAZ, ArrowUpAZ, ChevronDown, Clock3, ExternalLink, Lock, Globe,
 
 import { NewRepoEntryButton } from "@/components/NewRepoEntryButton";
 import { getProjectsQuery, projectsSearchSchema, withProjectsQuery, type ProjectsSearch } from "@/lib/projects-search";
+import {
+  sortProjects,
+  type NameSortDirection,
+  type RecentSortDirection,
+  type SortMode,
+} from "@/lib/projects-sort";
 import { auth } from "@/lib/server/auth";
 
 const getCurrentSession = createServerFn({ method: "GET" }).handler(async () => {
@@ -70,15 +76,13 @@ type FlattenedRepo = Repo & {
   ownerType: RepoGroup["owner"]["type"];
 };
 
-type SortMode = "name" | "recent";
-type NameSortDirection = "asc" | "desc";
-
 function ProjectsPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const query = getProjectsQuery(search);
   const [sortMode, setSortMode] = useState<SortMode>("name");
   const [nameSortDirection, setNameSortDirection] = useState<NameSortDirection>("asc");
+  const [recentSortDirection, setRecentSortDirection] = useState<RecentSortDirection>("desc");
 
   const isFilterPanelOpen = search.filters === "open";
   const showArchived = search.showArchived === "true";
@@ -153,7 +157,7 @@ function ProjectsPage() {
     void projectsQuery.refetch();
   };
 
-  const handleSortModeChange = (nextMode: SortMode) => {
+  const handleSortModeChange = (nextMode: SortMode, nextRecentSortDirection?: RecentSortDirection) => {
     if (nextMode === "name") {
       if (sortMode === "name") {
         setNameSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -165,6 +169,9 @@ function ProjectsPage() {
     }
 
     setSortMode("recent");
+    if (nextRecentSortDirection) {
+      setRecentSortDirection(nextRecentSortDirection);
+    }
   };
 
   const filteredGroups = useMemo(() => {
@@ -191,20 +198,15 @@ function ProjectsPage() {
 
         return {
           ...group,
-          repos: repos
-            .slice()
-            .sort((a, b) => {
-              if (sortMode === "recent") {
-                return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-              }
-
-              const comparedName = a.name.localeCompare(b.name);
-              return nameSortDirection === "asc" ? comparedName : -comparedName;
-            }),
+          repos: sortProjects(repos, {
+            sortMode,
+            nameSortDirection,
+            recentSortDirection,
+          }),
         };
       })
       .filter((group) => group.repos.length > 0);
-  }, [projects, query, showArchived, sortMode, nameSortDirection]);
+  }, [projects, query, showArchived, sortMode, nameSortDirection, recentSortDirection]);
 
   const filteredRepos = useMemo<FlattenedRepo[]>(() => {
     const repos = filteredGroups.flatMap((group) =>
@@ -215,15 +217,12 @@ function ProjectsPage() {
       })),
     );
 
-    return repos.sort((a, b) => {
-      if (sortMode === "recent") {
-        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-      }
-
-      const comparedName = a.name.localeCompare(b.name);
-      return nameSortDirection === "asc" ? comparedName : -comparedName;
+    return sortProjects(repos, {
+      sortMode,
+      nameSortDirection,
+      recentSortDirection,
     });
-  }, [filteredGroups, sortMode, nameSortDirection]);
+  }, [filteredGroups, sortMode, nameSortDirection, recentSortDirection]);
 
   const pageBackgroundClass = import.meta.env.DEV
     ? "[background-image:repeating-linear-gradient(135deg,rgba(250,204,21,0.045)_0px,rgba(250,204,21,0.045)_10px,transparent_10px,transparent_34px),linear-gradient(to_bottom,#0f172a,#0f172a,#1e293b)]"
@@ -271,6 +270,7 @@ function ProjectsPage() {
                 <SortByPills
                   sortMode={sortMode}
                   nameSortDirection={nameSortDirection}
+                  recentSortDirection={recentSortDirection}
                   onChange={handleSortModeChange}
                 />
 
@@ -425,14 +425,17 @@ function ProjectsPage() {
 function SortByPills({
   sortMode,
   nameSortDirection,
+  recentSortDirection,
   onChange,
 }: {
   sortMode: SortMode;
   nameSortDirection: NameSortDirection;
-  onChange: (mode: SortMode) => void;
+  recentSortDirection: RecentSortDirection;
+  onChange: (mode: SortMode, recentDirection?: RecentSortDirection) => void;
 }) {
   const isNameActive = sortMode === "name";
-  const isRecentActive = sortMode === "recent";
+  const isRecentNewestActive = sortMode === "recent" && recentSortDirection === "desc";
+  const isRecentOldestActive = sortMode === "recent" && recentSortDirection === "asc";
   const NameDirectionIcon = nameSortDirection === "asc" ? ArrowUpAZ : ArrowDownAZ;
 
   return (
@@ -441,12 +444,12 @@ function SortByPills({
         <p className="text-xs font-medium uppercase tracking-[0.14em] text-cyan-200">Sort by</p>
         <p className="text-xs text-cyan-100/70">(Click Name again to toggle A-Z / Z-A)</p>
       </div>
-      <div className="mt-2 flex w-full rounded-xl bg-slate-950/60 p-1">
+      <div className="mt-2 flex w-full flex-wrap rounded-xl bg-slate-950/60 p-1">
         <button
           type="button"
           onClick={() => onChange("name")}
           aria-pressed={isNameActive}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-3 py-2 text-sm transition ${
+          className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-3 py-2 text-sm transition ${
             isNameActive
               ? "border-cyan-300/45 bg-cyan-400/20 text-cyan-50 shadow-[0_0_10px_rgba(34,211,238,0.24)]"
               : "text-slate-300 hover:bg-slate-800/60"
@@ -458,16 +461,30 @@ function SortByPills({
 
         <button
           type="button"
-          onClick={() => onChange("recent")}
-          aria-pressed={isRecentActive}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-3 py-2 text-sm transition ${
-            isRecentActive
+          onClick={() => onChange("recent", "desc")}
+          aria-pressed={isRecentNewestActive}
+          className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-3 py-2 text-sm transition ${
+            isRecentNewestActive
               ? "border-cyan-300/45 bg-cyan-400/20 text-cyan-50 shadow-[0_0_10px_rgba(34,211,238,0.24)]"
               : "text-slate-300 hover:bg-slate-800/60"
           }`}
         >
           <Clock3 className="h-4 w-4" aria-hidden="true" />
-          <span>Recently used</span>
+          <span>Recently used (newest)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onChange("recent", "asc")}
+          aria-pressed={isRecentOldestActive}
+          className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-transparent px-3 py-2 text-sm transition ${
+            isRecentOldestActive
+              ? "border-cyan-300/45 bg-cyan-400/20 text-cyan-50 shadow-[0_0_10px_rgba(34,211,238,0.24)]"
+              : "text-slate-300 hover:bg-slate-800/60"
+          }`}
+        >
+          <Clock3 className="h-4 w-4" aria-hidden="true" />
+          <span>Recently used (oldest)</span>
         </button>
       </div>
     </section>
