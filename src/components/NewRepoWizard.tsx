@@ -11,6 +11,12 @@ type NewRepoWizardProps = {
   onCreateRepository?: (draft: NewRepoDraft) => Promise<{ htmlUrl?: string; fullName?: string }>;
 };
 
+const fieldClassName =
+  "mt-1.5 w-full rounded-lg bg-slate-950/55 px-3 py-2.5 text-slate-100 outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-400/70 disabled:cursor-not-allowed disabled:opacity-60";
+
+const choiceClassName =
+  "flex items-center gap-2 rounded-lg bg-slate-950/45 px-3 py-2 text-sm text-slate-100 transition hover:bg-slate-950/65";
+
 export function NewRepoWizard({ onCreateRepository }: NewRepoWizardProps) {
   const [draft, setDraft] = useState<NewRepoDraft>(() => createDefaultNewRepoDraft());
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
@@ -57,16 +63,14 @@ export function NewRepoWizard({ onCreateRepository }: NewRepoWizardProps) {
   };
 
   return (
-    <div className="mx-auto max-w-3xl rounded-2xl bg-slate-900/55 p-5 shadow-xl shadow-slate-950/35 sm:p-7">
-      <header>
+    <div className="mx-auto max-w-3xl rounded-2xl bg-slate-900/45 p-5 shadow-lg shadow-slate-950/20 sm:p-7">
+      <header className="border-b border-slate-800/80 pb-5">
         <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">New Repo</p>
         <h2 className="mt-1 text-xl font-semibold text-slate-100">Complete all sections and create your repository</h2>
-        <p className="mt-1 text-sm text-slate-300">
-          Fill the form from top to bottom. No stepper clicks required.
-        </p>
+        <p className="mt-1 text-sm text-slate-300">Fill the form from top to bottom. No stepper clicks required.</p>
       </header>
 
-      <div className="mt-6 space-y-5">
+      <div className="divide-y divide-slate-800/80">
         <WizardSection title="1. Details" description="Choose repository name and description.">
           <DetailsStep draft={draft} setDraft={setDraft} />
           {hasAttemptedSubmit ? <SectionErrors errors={detailsErrors} /> : null}
@@ -91,21 +95,19 @@ export function NewRepoWizard({ onCreateRepository }: NewRepoWizardProps) {
       </div>
 
       {submitError ? (
-        <p className="mt-5 rounded-lg bg-rose-950/35 p-3 text-sm text-rose-200 ring-1 ring-rose-700/70" role="alert">
+        <p className="mt-5 rounded-lg bg-rose-950/30 p-3 text-sm text-rose-200" role="alert">
           {submitError}
         </p>
       ) : null}
 
       {submitSuccess ? (
-        <p className="mt-5 rounded-lg bg-emerald-950/35 p-3 text-sm text-emerald-200 ring-1 ring-emerald-700/70">
-          {submitSuccess}
-        </p>
+        <p className="mt-5 rounded-lg bg-emerald-950/30 p-3 text-sm text-emerald-200">{submitSuccess}</p>
       ) : null}
 
-      <footer className="mt-5 flex flex-wrap items-center gap-2 sm:justify-between">
+      <footer className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-800/80 pt-4 sm:justify-between">
         <a
           href="/projects"
-          className="inline-flex items-center rounded-lg bg-slate-800/80 px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-700/80"
+          className="inline-flex items-center rounded-lg bg-slate-800/70 px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-700/80"
         >
           Cancel
         </a>
@@ -133,7 +135,7 @@ function WizardSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl bg-slate-900/65 p-4 shadow-sm shadow-slate-950/20 sm:p-5">
+    <section className="py-5">
       <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
       <p className="mt-1 text-sm text-slate-300">{description}</p>
       <div className="mt-4 space-y-4">{children}</div>
@@ -147,7 +149,7 @@ function SectionErrors({ errors }: { errors: Array<string> }) {
   }
 
   return (
-    <div className="rounded-lg bg-rose-950/40 p-3 text-sm text-rose-200 ring-1 ring-rose-700/70" role="alert">
+    <div className="rounded-lg bg-rose-950/30 p-3 text-sm text-rose-200" role="alert">
       <p className="font-medium">Please fix the following:</p>
       <ul className="mt-2 list-disc space-y-1 pl-5">
         {errors.map((error) => (
@@ -175,7 +177,7 @@ function DetailsStep({
             const nextName = event.target.value;
             setDraft((current) => ({ ...current, name: nextName }));
           }}
-          className="mt-1.5 w-full rounded-lg bg-slate-900/80 px-3 py-2 text-slate-100 outline-none ring-1 ring-slate-700/70 transition focus:ring-cyan-400"
+          className={fieldClassName}
           placeholder="my-awesome-repo"
           autoFocus
         />
@@ -190,7 +192,7 @@ function DetailsStep({
             setDraft((current) => ({ ...current, description: nextDescription }));
           }}
           rows={3}
-          className="mt-1.5 w-full rounded-lg bg-slate-900/80 px-3 py-2 text-slate-100 outline-none ring-1 ring-slate-700/70 transition focus:ring-cyan-400"
+          className={fieldClassName}
           placeholder="Small summary of this repo"
         />
       </label>
@@ -215,7 +217,7 @@ function AccessStep({
             const nextOwner = event.target.value;
             setDraft((current) => ({ ...current, ownerLogin: nextOwner }));
           }}
-          className="mt-1.5 w-full rounded-lg bg-slate-900/80 px-3 py-2 text-slate-100 outline-none ring-1 ring-slate-700/70 transition focus:ring-cyan-400"
+          className={fieldClassName}
           placeholder="your-user-or-org"
         />
       </label>
@@ -223,7 +225,7 @@ function AccessStep({
       <fieldset className="space-y-2">
         <legend className="text-sm text-slate-200">Visibility</legend>
 
-        <label className="flex items-center gap-2 rounded-lg bg-slate-900/55 px-3 py-2 text-sm text-slate-100 ring-1 ring-slate-800/70">
+        <label className={choiceClassName}>
           <input
             type="radio"
             name="visibility"
@@ -235,7 +237,7 @@ function AccessStep({
           Private
         </label>
 
-        <label className="flex items-center gap-2 rounded-lg bg-slate-900/55 px-3 py-2 text-sm text-slate-100 ring-1 ring-slate-800/70">
+        <label className={choiceClassName}>
           <input
             type="radio"
             name="visibility"
@@ -260,7 +262,7 @@ function InitializeStep({
 }) {
   return (
     <>
-      <label className="flex items-center gap-2 rounded-lg bg-slate-900/55 px-3 py-2 text-sm text-slate-100 ring-1 ring-slate-800/70">
+      <label className={choiceClassName}>
         <input
           type="checkbox"
           checked={draft.autoInit}
@@ -286,7 +288,7 @@ function InitializeStep({
             const nextTemplate = event.target.value;
             setDraft((current) => ({ ...current, gitignoreTemplate: nextTemplate }));
           }}
-          className="mt-1.5 w-full rounded-lg bg-slate-900/80 px-3 py-2 text-slate-100 outline-none ring-1 ring-slate-700/70 transition focus:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className={fieldClassName}
           placeholder="Node"
         />
       </label>
@@ -300,7 +302,7 @@ function InitializeStep({
             const nextLicense = event.target.value;
             setDraft((current) => ({ ...current, licenseTemplate: nextLicense }));
           }}
-          className="mt-1.5 w-full rounded-lg bg-slate-900/80 px-3 py-2 text-slate-100 outline-none ring-1 ring-slate-700/70 transition focus:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className={fieldClassName}
           placeholder="mit"
         />
       </label>
@@ -310,7 +312,7 @@ function InitializeStep({
 
 function ReviewStep({ draft }: { draft: NewRepoDraft }) {
   return (
-    <dl className="grid gap-3 rounded-lg bg-slate-900/55 p-4 text-sm text-slate-200 ring-1 ring-slate-800/70 sm:grid-cols-2">
+    <dl className="grid gap-3 rounded-xl bg-slate-950/45 p-4 text-sm text-slate-200 sm:grid-cols-2">
       <ReviewItem label="Repository name" value={normalizeRepoName(draft.name)} />
       <ReviewItem label="Owner" value={draft.ownerLogin || "-"} />
       <ReviewItem label="Visibility" value={draft.visibility} />

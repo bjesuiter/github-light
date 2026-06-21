@@ -32,8 +32,8 @@ export const Route = createFileRoute("/new-repo")({
 
 function NewRepoPage() {
   const pageBackgroundClass = import.meta.env.DEV
-    ? "[background-image:repeating-linear-gradient(135deg,rgba(250,204,21,0.045)_0px,rgba(250,204,21,0.045)_10px,transparent_10px,transparent_34px),linear-gradient(to_bottom,#020617,#020617,#0f172a)]"
-    : "bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900";
+    ? "[background-image:repeating-linear-gradient(135deg,rgba(250,204,21,0.045)_0px,rgba(250,204,21,0.045)_10px,transparent_10px,transparent_34px),linear-gradient(to_bottom,#0f172a,#0f172a,#1e293b)]"
+    : "bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800";
 
   const handleCreateRepository = async (draft: NewRepoDraft) => {
     const response = await fetch("/api/repos/create", {
@@ -64,11 +64,11 @@ function NewRepoPage() {
 
   return (
     <div className={`min-h-[calc(100dvh-4rem)] px-4 py-6 text-slate-100 sm:px-6 ${pageBackgroundClass}`}>
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-5">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-50">Create new repository</h1>
+      <div className="mx-auto max-w-5xl rounded-3xl p-5 sm:p-6">
+        <div className="mx-auto mb-5 max-w-3xl">
+          <h1 className="text-lg font-semibold text-slate-100 sm:text-xl">Create new repository</h1>
           <p className="mt-1.5 text-sm text-slate-300">
-            Fill the sections below and scroll straight through before creating the repository.
+            Set the details once, review in place, and create your repository.
           </p>
         </div>
 
