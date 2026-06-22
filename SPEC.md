@@ -26,7 +26,7 @@ Build a simple TanStack Start app with two pages: a GitHub login page and a proj
 - `@octokit/auth-oauth-app` (OAuth flow helper) or direct OAuth endpoints with server route
 - `better-auth` (OAuth and session handling, no DB)
 - `zod` (input validation)
-- `dotenv` (env var loading for local dev)
+- `varlock` (env schema, validation, and local command injection)
 - `clsx` (class composition)
 - `cva` (class variance authority for UI variants)
 - `lucide-react` (icons)
@@ -67,7 +67,8 @@ Build a simple TanStack Start app with two pages: a GitHub login page and a proj
    - Initialize with `bunx @tanstack/cli create`
    - Verify dev server runs
 2. Set up env config
-   - `.env` for `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `APP_BASE_URL`
+   - `.env.schema` for `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `APP_BASE_URL`
+   - local `.env*` files remain gitignored and are loaded through `varlock run -- ...`
 3. Implement OAuth flow (Better Auth)
    - Configure Better Auth GitHub provider
    - Use Better Auth routes/handlers for redirect + callback

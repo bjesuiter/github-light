@@ -3,8 +3,10 @@ node_modules
 dist
 dist-ssr
 *.local
+.env*
+!.env.example
+!.env.schema
 count.txt
-.env
 .nitro
 .tanstack
 .wrangler
