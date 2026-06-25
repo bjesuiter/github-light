@@ -14,9 +14,9 @@ The test is intentionally guarded so it does not run accidentally.
 
 Environment is loaded through Varlock. Keep real `.env*` files local and gitignored; `.env.schema` is the committed contract.
 
-On JB macOS machines, select the committed JB profile by creating a gitignored `.env.local` with `DEV_ENV=jb`. The committed `.env.jb` file contains resolver refs only; local dev secrets use project/profile-scoped Keychain items with service `varlock` and account `github-light:jb:<ENV_VAR_NAME>`, for example `keychain(service="varlock", account="github-light:jb:GITHUB_CLIENT_SECRET")`. This keeps the exported env var names unchanged while making the selectable Keychain item identity project-specific.
+On JB macOS machines, select the committed JB profile by creating a gitignored `.env.local` with `DEV_ENV=jb`. The committed `.env.jb` file contains resolver refs only; local dev secrets use project/profile-scoped Keychain items with service `varlock` and account `github-light:jb:<ENV_VAR_NAME>`, for example `exec("security find-generic-password -s varlock -a \"github-light:jb:GITHUB_CLIENT_SECRET\" -w")`. This keeps the exported env var names unchanged while making the selectable Keychain item identity project-specific.
 
-Current Varlock exposes `service` and `account` for `keychain(...)`, but does not expose a prompt API for overriding the Keychain picker heading/title or adding supporting text. Avoid `keychain(prompt)` for this repo because the picker title can still be ambiguous; create/select project-scoped items instead.
+Current Varlock exposes `service` and `account` for `keychain(...)`, but does not expose a prompt API for overriding the Keychain picker heading/title or adding supporting text. The JB profile uses the `security` CLI fallback because the current project-scoped items are not readable through Varlock-native `keychain(...)`; migrate back to `keychain(...)` after VarlockEnclave-compatible items are created.
 
 For the JB profile, verify Keychain item presence without printing values:
 
