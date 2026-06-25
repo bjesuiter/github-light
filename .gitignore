@@ -6,6 +6,7 @@ dist-ssr
 .env*
 !.env.example
 !.env.schema
+!.env.jb
 count.txt
 .nitro
 .tanstack
